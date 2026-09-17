@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { notification, Button } from "antd";
 import { StarOutlined } from "@ant-design/icons";
 import api from "../../configs/api";
+import authStorage from "../../shared/storage/authStorage";
 import RatingModal from "../RatingModal/RatingModal";
 import "./RatingNotification.css";
 
@@ -24,7 +25,6 @@ const RatingNotification = () => {
 
   // Hàm mở modal đánh giá
   const openRatingModal = (appointment) => {
-    console.log("Opening rating modal for appointment:", appointment);
     // Đảm bảo appointment có đủ thông tin cần thiết
     const enhancedAppointment = {
       ...appointment,
@@ -45,23 +45,19 @@ const RatingNotification = () => {
 
     try {
       setLoading(true);
-      console.log("Fetching completed appointments...");
 
       // Sử dụng endpoint by-status thay vì /unrated
       const response = await api.get("/appointment/by-status?status=COMPLETED");
-      console.log("API response:", response);
 
       // Lọc các cuộc hẹn đã hoàn thành nhưng chưa đánh giá
       const unratedAppointments = response.data.filter(
         (appointment) => !appointment.isRated
       );
 
-      console.log("Filtered unrated appointments:", unratedAppointments);
 
       if (unratedAppointments && unratedAppointments.length > 0) {
         // Lấy cuộc hẹn gần nhất cần đánh giá
         const appointmentToRate = unratedAppointments[0];
-        console.log("Showing notification for appointment:", appointmentToRate);
 
         // Hiển thị thông báo
         const key = "rating-reminder";
@@ -88,7 +84,6 @@ const RatingNotification = () => {
             <Button
               type="primary"
               onClick={() => {
-                console.log("Rating button clicked");
                 notificationApi.destroy(key);
                 // Đảm bảo notification đóng trước khi mở modal
                 setTimeout(() => {
@@ -169,8 +164,7 @@ const RatingNotification = () => {
 
   useEffect(() => {
     // Chỉ fetch khi người dùng đã đăng nhập
-    const token = localStorage.getItem("token");
-    console.log("RatingNotification useEffect, token exists:", !!token);
+    const token = authStorage.getToken();
 
     if (token) {
       // Gọi hàm fetch sau một khoảng thời gian ngắn
@@ -180,10 +174,6 @@ const RatingNotification = () => {
     }
   }, []);
 
-  // Thêm log để kiểm tra trạng thái modal
-  console.log("Modal visible:", ratingModalVisible);
-  console.log("Appointment to rate:", appointmentToRate);
-
   return (
     <>
       {contextHolder}
@@ -191,7 +181,6 @@ const RatingNotification = () => {
       <RatingModal
         visible={ratingModalVisible}
         onClose={() => {
-          console.log("Closing rating modal");
           setRatingModalVisible(false);
         }}
         appointment={appointmentToRate}

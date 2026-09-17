@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../configs/serverConfig";
+import api from "../../configs/api";
+import authStorage from "../../shared/storage/authStorage";
+import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
 const CommentItem = ({ comment, currentUser, onCommentDeleted }) => {
   const [deleting, setDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -40,42 +42,25 @@ const CommentItem = ({ comment, currentUser, onCommentDeleted }) => {
 
     try {
       setDeleting(true);
-      console.log(`🗑️ Deleting comment ${comment.id}...`);
-
-      const token = localStorage.getItem("token");
+      const token = authStorage.getToken();
       if (!token) {
-        toast.error("Vui lòng đăng nhập lại!");
+        toast.error(CONTENT_MESSAGES.LOGIN_REQUIRED);
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/comment/${comment.id}`, {
-        method: "DELETE",
-        headers: {
-          Accept: "*/*",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await api.delete(`/comment/${comment.id}`);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      console.log("Comment deleted successfully");
       onCommentDeleted(comment.id);
-      toast.success("Đã xóa bình luận thành công!");
+      toast.success(CONTENT_MESSAGES.COMMENT_DELETE_SUCCESS);
     } catch (error) {
-      console.error(" Error deleting comment:", error);
-
-      let errorMessage = "Có lỗi xảy ra khi xóa bình luận";
-      if (error.message.includes("401")) {
-        errorMessage = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!";
-      } else if (error.message.includes("403")) {
-        errorMessage = "Bạn không có quyền xóa bình luận này";
-      } else if (error.message.includes("404")) {
-        errorMessage = "Bình luận không tồn tại";
+      const status = error.response?.status;
+      let errorMessage = CONTENT_MESSAGES.COMMENT_DELETE_FAILED;
+      if (status === 401) {
+        errorMessage = CONTENT_MESSAGES.SESSION_EXPIRED;
+      } else if (status === 403) {
+        errorMessage = CONTENT_MESSAGES.FORBIDDEN;
+      } else if (status === 404) {
+        errorMessage = CONTENT_MESSAGES.COMMENT_NOT_FOUND;
       } else if (error.message) {
         errorMessage = error.message;
       }

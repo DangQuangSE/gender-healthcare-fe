@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../configs/serverConfig";
+import api from "../../configs/api";
+import authStorage from "../../shared/storage/authStorage";
+import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
 const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -9,22 +11,20 @@ const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
     e.preventDefault();
 
     if (!content.trim()) {
-      toast.error("Vui lòng nhập nội dung bình luận!");
+      toast.error(CONTENT_MESSAGES.COMMENT_REQUIRED);
       return;
     }
 
     if (content.length > 1000) {
-      toast.error("Bình luận không được vượt quá 1000 ký tự!");
+      toast.error(CONTENT_MESSAGES.COMMENT_TOO_LONG);
       return;
     }
 
     try {
       setSubmitting(true);
-      console.log(`[COMMENT] Submitting comment for blog ${blogId}...`);
-
-      const token = localStorage.getItem("token");
+      const token = authStorage.getToken();
       if (!token) {
-        toast.error("Vui lòng đăng nhập lại!");
+        toast.error(CONTENT_MESSAGES.LOGIN_REQUIRED);
         return;
       }
 
@@ -33,27 +33,8 @@ const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
         description: content.trim(),
       };
 
-      console.log(" Comment request body:", requestBody);
-
-      const response = await fetch(`${API_BASE_URL}/comment`, {
-        method: "POST",
-        headers: {
-          Accept: "*/*",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      const newComment = await response.json();
-      console.log("Comment created successfully:", newComment);
+      const response = await api.post("/comment", requestBody);
+      const newComment = response.data;
 
       // Transform the response to match our comment structure
       const transformedComment = {
@@ -68,17 +49,16 @@ const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
       setContent("");
       onCommentAdded(transformedComment);
       if (typeof onRefresh === "function") onRefresh();
-      toast.success("Đã thêm bình luận thành công!");
+      toast.success(CONTENT_MESSAGES.COMMENT_CREATE_SUCCESS);
     } catch (error) {
-      console.error(" Error creating comment:", error);
-
-      let errorMessage = "Có lỗi xảy ra khi gửi bình luận";
-      if (error.message.includes("401")) {
-        errorMessage = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!";
-      } else if (error.message.includes("400")) {
-        errorMessage = "Dữ liệu không hợp lệ";
-      } else if (error.message.includes("403")) {
-        errorMessage = "Bạn không có quyền thực hiện thao tác này";
+      const status = error.response?.status;
+      let errorMessage = CONTENT_MESSAGES.COMMENT_CREATE_FAILED;
+      if (status === 401) {
+        errorMessage = CONTENT_MESSAGES.SESSION_EXPIRED;
+      } else if (status === 400) {
+        errorMessage = CONTENT_MESSAGES.INVALID_DATA;
+      } else if (status === 403) {
+        errorMessage = CONTENT_MESSAGES.FORBIDDEN;
       } else if (error.message) {
         errorMessage = error.message;
       }

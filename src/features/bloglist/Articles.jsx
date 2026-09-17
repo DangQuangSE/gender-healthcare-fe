@@ -9,6 +9,8 @@ import {
   CommentIcon,
 } from "../../components/Icons/BlogIcons";
 import { API_BASE_URL } from "../../configs/serverConfig";
+import storage from "../../shared/storage/storage";
+import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
 
 const Articles = () => {
   const [articles, setArticles] = useState([]);
@@ -193,9 +195,9 @@ const Articles = () => {
         setArticles(transformedArticles);
 
         // Lưu vào localStorage để dùng ở BlogDetail
-        localStorage.setItem(
-          "allArticles",
-          JSON.stringify(transformedArticles)
+        storage.setJson(
+          STORAGE_KEYS.ALL_ARTICLES,
+          transformedArticles
         );
       } catch (error) {
         // Fallback to empty array if API fails

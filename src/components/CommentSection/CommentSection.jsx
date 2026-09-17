@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
-import { API_BASE_URL } from "../../configs/serverConfig";
+import api from "../../configs/api";
+import authStorage from "../../shared/storage/authStorage";
+import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
 import { CommentIcon } from "../Icons/BlogIcons";
 import "./CommentSection.css";
 
@@ -15,17 +17,9 @@ const CommentSection = ({
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  // Get current user from localStorage
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-
-    if (userData && token) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (err) {
-        console.error("Error parsing user data:", err);
-      }
+    if (authStorage.getToken()) {
+      setUser(authStorage.getUser());
     }
   }, []);
 
@@ -33,10 +27,8 @@ const CommentSection = ({
   const loadComments = async () => {
     try {
       setLoading(true);
-      console.log(" Loading comments cho blogId:", blogId);
-      const response = await fetch(`${API_BASE_URL}/comment/blog/${blogId}`);
-      const data = await response.json();
-      console.log("API trả về:", data);
+      const response = await api.get(`/comment/blog/${blogId}`);
+      const data = response.data;
 
       // Transform comments data
       const transformedComments = Array.isArray(data)
@@ -52,9 +44,8 @@ const CommentSection = ({
         : [];
 
       setComments(transformedComments);
-    } catch (error) {
-      console.error(" Error loading comments:", error);
-      toast.error("Không thể tải bình luận");
+    } catch {
+      toast.error(CONTENT_MESSAGES.COMMENT_LOAD_FAILED);
       setComments([]);
     } finally {
       setLoading(false);
@@ -69,7 +60,6 @@ const CommentSection = ({
   }, [blogId]);
 
   const handleCommentAdded = (newComment) => {
-    console.log("New comment added:", newComment);
     setComments((prev) => [newComment, ...prev]);
 
     // Notify parent component to update comment count
@@ -79,7 +69,6 @@ const CommentSection = ({
   };
 
   const handleCommentDeleted = (commentId) => {
-    console.log(`🗑️ Comment ${commentId} deleted`);
     setComments((prev) => prev.filter((comment) => comment.id !== commentId));
 
     // Notify parent component to update comment count

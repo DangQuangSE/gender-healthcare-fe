@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
+import authStorage from "../../../shared/storage/authStorage";
 import "./Navigation.css";
 
 // Removed blog options - no longer using tag-based navigation
@@ -8,18 +9,7 @@ const Navigation = () => {
   const location = useLocation();
   const userState = useSelector((state) => state.user);
 
-  // Get user from Redux state or fallback to localStorage
-  let user = userState?.user;
-  if (!user || !user.email) {
-    try {
-      const localUser = localStorage.getItem("user");
-      if (localUser) {
-        user = JSON.parse(localUser);
-      }
-    } catch {
-      console.log("No valid localStorage user data");
-    }
-  }
+  const user = userState?.user?.email ? userState.user : authStorage.getUser();
 
   // Scroll to top function
   const handleScrollToTop = () => {

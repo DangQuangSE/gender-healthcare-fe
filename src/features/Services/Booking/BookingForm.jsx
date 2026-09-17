@@ -24,6 +24,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import "./BookingForm.css";
 import GradientButton from "../../../components/common/GradientButton";
 import api from "../../../configs/api";
+import bookingStorage from "../../../shared/storage/bookingStorage";
+import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
 dayjs.extend(isSameOrBefore);
 
 const { Title, Text } = Typography;
@@ -84,8 +86,8 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   // Listen for schedule refresh trigger
   useEffect(() => {
     const checkRefreshTrigger = () => {
-      const shouldRefresh = localStorage.getItem("shouldRefreshSchedule");
-      const lastBookedServiceId = localStorage.getItem("lastBookedServiceId");
+      const shouldRefresh = bookingStorage.get(STORAGE_KEYS.SHOULD_REFRESH_SCHEDULE);
+      const lastBookedServiceId = bookingStorage.get(STORAGE_KEYS.LAST_BOOKED_SERVICE_ID);
 
       if (
         shouldRefresh === "true" &&
@@ -95,8 +97,8 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
         fetchScheduleData();
 
         // Clear the trigger
-        localStorage.removeItem("shouldRefreshSchedule");
-        localStorage.removeItem("lastBookedServiceId");
+        bookingStorage.remove(STORAGE_KEYS.SHOULD_REFRESH_SCHEDULE);
+        bookingStorage.remove(STORAGE_KEYS.LAST_BOOKED_SERVICE_ID);
       }
     };
 
@@ -122,8 +124,8 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
         setConsultants(res.data || []);
 
         // Kiểm tra xem có bác sĩ đã được chọn từ ServiceDetail không
-        const selectedConsultantId = localStorage.getItem(
-          "selectedConsultantId"
+        const selectedConsultantId = bookingStorage.get(
+          STORAGE_KEYS.SELECTED_CONSULTANT_ID
         );
         if (selectedConsultantId) {
           setSelectedConsultantId(Number(selectedConsultantId));
@@ -141,7 +143,9 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   // Listen for consultant selection from ServiceDetail
   useEffect(() => {
     const handleConsultantSelected = () => {
-      const selectedConsultantId = localStorage.getItem("selectedConsultantId");
+      const selectedConsultantId = bookingStorage.get(
+        STORAGE_KEYS.SELECTED_CONSULTANT_ID
+      );
       if (selectedConsultantId) {
         setSelectedConsultantId(Number(selectedConsultantId));
         setConsultantUpdateTrigger((prev) => prev + 1); // Force re-render
@@ -166,9 +170,9 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   // Clear selected consultant when component unmounts
   useEffect(() => {
     return () => {
-      localStorage.removeItem("selectedConsultantId");
-      localStorage.removeItem("selectedConsultantName");
-      localStorage.removeItem("selectedConsultantSpecialization");
+      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_ID);
+      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_NAME);
+      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION);
     };
   }, []);
 
@@ -228,23 +232,6 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
       consultantId: selectedConsultantId, // Thêm consultantId
     };
 
-    console.log(
-      "[DEBUG] Booking preview data with service type:",
-      bookingPreviewData
-    );
-    console.log(
-      "[DEBUG] selectedConsultantId trong BookingForm:",
-      selectedConsultantId
-    );
-    console.log(
-      "[DEBUG] localStorage selectedConsultantId:",
-      localStorage.getItem("selectedConsultantId")
-    );
-    console.log(
-      "[DEBUG] localStorage selectedConsultantName:",
-      localStorage.getItem("selectedConsultantName")
-    );
-
     navigate("/booking-confirmation", { state: bookingPreviewData });
   };
 
@@ -277,13 +264,13 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
           Chọn bác sĩ (tùy chọn)
         </Text>
         {selectedConsultantId &&
-          localStorage.getItem("selectedConsultantName") && (
+          bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME) && (
             <div
               key={consultantUpdateTrigger} // Force re-render when consultant changes
               className="consultant-selected-notification"
             >
-              ✓ Đã chọn: {localStorage.getItem("selectedConsultantName")} -{" "}
-              {localStorage.getItem("selectedConsultantSpecialization")}
+              ✓ Đã chọn: {bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME)} -{" "}
+              {bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION)}
             </div>
           )}
         <Select

@@ -5,6 +5,8 @@ import RelatedArticlesSection from "./RelatedArticlesSection";
 import CommentSection from "../../components/CommentSection/CommentSection";
 import { likeBlog, viewBlogAndIncreaseCount } from "../../api/consultantAPI";
 import { fetchBlogSummary } from "../../api/commentAPI";
+import storage from "../../shared/storage/storage";
+import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
 import {
   EyeIcon,
   HeartIcon,
@@ -81,10 +83,9 @@ const BlogDetail = () => {
 
         setArticle(transformedArticle);
 
-        // Load related articles from localStorage as fallback
-        const sampleArticles = JSON.parse(
-          localStorage.getItem("allArticles") || "[]"
-        );
+        // Use the last loaded list only as a fallback for related articles.
+        const sampleArticles =
+          storage.getJson(STORAGE_KEYS.ALL_ARTICLES, []) || [];
         const related = sampleArticles.filter(
           (item) => item.id.toString() !== id
         );
@@ -92,10 +93,9 @@ const BlogDetail = () => {
       } catch (error) {
         console.error(" Error loading blog detail:", error);
 
-        // Fallback to localStorage
-        const sampleArticles = JSON.parse(
-          localStorage.getItem("allArticles") || "[]"
-        );
+        // Fallback to the last loaded list when the detail request fails.
+        const sampleArticles =
+          storage.getJson(STORAGE_KEYS.ALL_ARTICLES, []) || [];
         const fallbackArticle = sampleArticles.find(
           (item) => item.id.toString() === id
         );

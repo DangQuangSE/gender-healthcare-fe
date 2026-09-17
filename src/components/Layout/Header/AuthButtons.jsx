@@ -5,7 +5,6 @@ import AuthModal from "../../../features/authentication/AuthModal";
 import { useDispatch, useSelector } from "react-redux";
 import {
   UserOutlined,
-  SettingOutlined,
   LogoutOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
@@ -13,6 +12,8 @@ import { Avatar, Dropdown, Badge, Calendar } from "antd";
 import { logout } from "../../../redux/reduxStore/userSlice.js";
 import { useNavigate } from "react-router-dom";
 import api from "../../../configs/api";
+import authStorage from "../../../shared/storage/authStorage";
+import bookingStorage from "../../../shared/storage/bookingStorage";
 import NotificationDropdown from "./Notification.jsx";
 
 const AuthButtons = () => {
@@ -20,34 +21,12 @@ const AuthButtons = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  //  LẤY RA USER ĐÚNG TỪ state
   const userState = useSelector((state) => state.user);
-  let user = userState?.user;
+  const user = userState?.user?.email
+    ? userState.user
+    : authStorage.getUser();
 
-  // Fallback từ localStorage nếu Redux state bị lỗi
-  if (!user || !user.email) {
-    try {
-      const localUser = localStorage.getItem("user");
-      if (localUser) {
-        user = JSON.parse(localUser);
-        console.log("🔧 Using fallback user from localStorage:", user);
-      }
-    } catch {
-      console.log("🔧 No valid localStorage user data");
-    }
-  }
-
-  //  Debug logging
-  console.log("AuthButtons Debug:");
-  console.log("Full userState:", userState);
-  console.log("Final user:", user);
-  console.log("user.email:", user?.email);
-  console.log("user.fullname:", user?.fullname);
-  console.log("user.imageUrl:", user?.imageUrl);
-
-  //  Cải thiện logic kiểm tra đăng nhập
-  const isLoggedIn = user && user.email && user.email.trim() !== "";
-  console.log("isLoggedIn:", isLoggedIn);
+  const isLoggedIn = Boolean(user?.email?.trim());
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -82,8 +61,9 @@ const AuthButtons = () => {
       label: "Đăng xuất",
       icon: <LogoutOutlined />,
       onClick: () => {
+        authStorage.clearSession();
+        bookingStorage.removePendingBooking();
         dispatch(logout());
-        localStorage.clear(); //  Gộp xóa gọn
         navigate("/");
       },
     },
@@ -93,10 +73,8 @@ const AuthButtons = () => {
     try {
       setLoading(true);
       const response = await api.get("/notifications");
-      console.log("Notifications API response:", response.data);
       setNotifications(response.data || []);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
+    } catch {
       // Nếu API lỗi, sử dụng dữ liệu mẫu
       setNotifications([
         {
@@ -116,7 +94,6 @@ const AuthButtons = () => {
   };
 
   const handleNotificationClick = async (notification) => {
-    console.log("Notification clicked:", notification);
     try {
       // Nếu thông báo chưa đọc, gọi API đánh dấu đã đọc
       if (!notification.isRead) {
@@ -134,10 +111,8 @@ const AuthButtons = () => {
       setShowNotifications(false);
 
       // Navigate đến trang booking
-      console.log("🔔 [NOTIFICATION] Navigating to /user/booking");
       navigate("/user/booking");
-    } catch (error) {
-      console.error("Error handling notification:", error);
+    } catch {
       // Nếu có lỗi, vẫn navigate đến booking page
       setShowNotifications(false);
       navigate("/user/booking");

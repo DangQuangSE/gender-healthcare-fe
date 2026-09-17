@@ -1,5 +1,6 @@
 import api, { upload } from "../configs/api";
 import dayjs from "dayjs";
+import authStorage from "../shared/storage/authStorage";
 
 export const fetchBlogs = (page = 0, size = 10) => {
   return api.get(`/blog?page=${page}&size=${size}`);
@@ -94,7 +95,7 @@ export const createBlog = (blogData) => {
 const LIKE_API_SIMULATION_MODE = false;
 
 export const likeBlog = async (id) => {
-  const token = localStorage.getItem("token");
+  const token = authStorage.getToken();
 
   if (LIKE_API_SIMULATION_MODE) {
     // Simulation mode for testing UI
@@ -122,10 +123,7 @@ export const likeBlog = async (id) => {
       `/blog/${id}/like`,
       {},
       {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
       }
     );
 
@@ -163,7 +161,7 @@ export const getConsultantSchedules = (consultantId, from, to) => {
 };
 
 export const deleteBlog = async (blogId) => {
-  const token = localStorage.getItem("token");
+  const token = authStorage.getToken();
 
   // Check if user is logged in
   if (!token) {
@@ -171,11 +169,7 @@ export const deleteBlog = async (blogId) => {
   }
 
   try {
-    const response = await api.delete(`/blog/${blogId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await api.delete(`/blog/${blogId}`);
 
     return response;
   } catch (error) {

@@ -6,6 +6,8 @@ import { useDispatch } from "react-redux";
 import { login } from "../../redux/reduxStore/userSlice";
 import { toast } from "react-toastify";
 import LoginGoogle from "../../api/LoginGoogle";
+import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
+import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
 
 const RegisterForm = () => {
   const [step, setStep] = useState(1);
@@ -26,7 +28,7 @@ const RegisterForm = () => {
 
       // Nếu không throw thì thành công
       if (res.data && res.data.includes("OTP đã được gửi")) {
-        message.success("OTP đã gửi tới email!");
+        message.success(AUTH_MESSAGES.OTP_SENT);
         setStep(2);
       }
     } catch (err) {
@@ -36,10 +38,9 @@ const RegisterForm = () => {
           : "";
 
       if (errMsg.includes("Email đã tồn tại")) {
-        message.info("Email đã tồn tại, vui lòng đăng nhập.");
+        message.info(AUTH_MESSAGES.EMAIL_EXISTS);
       } else {
-        console.error("Lỗi backend trả về:", errMsg || err);
-        message.error("Có lỗi xảy ra!");
+        message.error(errMsg || AUTH_MESSAGES.REGISTRATION_FAILED);
       }
     } finally {
       setLoading(false);
@@ -58,10 +59,10 @@ const RegisterForm = () => {
       });
       // Nếu trả về chuỗi thành công
       if (typeof res.data === "string" && res.data.toLowerCase()) {
-        message.success("Xác thực OTP thành công!");
+        message.success(AUTH_MESSAGES.OTP_VERIFIED);
         setStep(3);
       } else {
-        message.error("OTP không đúng hoặc đã hết hạn!");
+        message.error(AUTH_MESSAGES.OTP_INVALID);
       }
     } catch (err) {
       // Nếu backend trả về chuỗi lỗi
@@ -70,9 +71,9 @@ const RegisterForm = () => {
           ? err.response.data
           : "";
       if (errMsg.includes("OTP không hợp lệ") || errMsg.includes("hết hạn")) {
-        message.error("OTP không hợp lệ hoặc đã hết hạn!");
+        message.error(AUTH_MESSAGES.OTP_INVALID);
       } else {
-        message.error("Có lỗi xảy ra!");
+        message.error(AUTH_MESSAGES.REGISTRATION_FAILED);
       }
     } finally {
       setLoading(false);
@@ -90,15 +91,13 @@ const RegisterForm = () => {
         confirmPassword: values.confirm,
       });
 
-      console.log("Response đăng ký:", res.data);
-
       // Giả sử API chỉ trả về chuỗi thông báo thành công
       if (
         typeof res.data === "string" &&
         res.data.toLowerCase().includes("thành công")
       ) {
         // Không có user để dispatch (vì chỉ là string "Thành công!")
-        message.success("Đăng ký thành công!");
+        message.success(AUTH_MESSAGES.REGISTRATION_SUCCESS);
         window.location.href = "/";
       }
       // Nếu API trả về object có user:
@@ -109,10 +108,10 @@ const RegisterForm = () => {
         res.data.user
       ) {
         dispatch(login());
-        message.success("Đăng ký thành công!");
+        message.success(AUTH_MESSAGES.REGISTRATION_SUCCESS);
         window.location.href = "/";
       } else {
-        message.error("Đăng ký thất bại!");
+        message.error(AUTH_MESSAGES.REGISTRATION_FAILED);
       }
     } catch (err) {
       // Nếu chắc chắn chỉ lỗi mật khẩu không cần thông báo
@@ -121,12 +120,12 @@ const RegisterForm = () => {
         typeof err.response.data === "string" &&
         err.response.data.includes("Mật khẩu")
       ) {
-        console.warn("Server password validation: ", err.response.data);
+        message.error(err.response.data);
       } else {
         const errMsg =
           err?.response?.data && typeof err.response.data === "string"
             ? err.response.data
-            : "Đăng ký thất bại!";
+            : AUTH_MESSAGES.REGISTRATION_FAILED;
         message.error(errMsg);
       }
     } finally {
@@ -142,15 +141,17 @@ const RegisterForm = () => {
         email,
         password: values.password,
       });
-      if (res.data.token) {
-        dispatch(login(res.data.user));
-        message.success("Đăng nhập thành công!");
+      const session = getLoginSession(res.data);
+      if (session.token && session.user) {
+        saveLoginSession(res.data);
+        dispatch(login(session));
+        message.success(AUTH_MESSAGES.LOGIN_SUCCESS);
         window.location.href = "/";
       } else {
-        message.error("Sai mật khẩu hoặc tài khoản không tồn tại!");
+        message.error(AUTH_MESSAGES.INVALID_CREDENTIALS);
       }
     } catch (err) {
-      message.error("Lỗi đăng nhập!", err.message);
+      message.error(err.message || AUTH_MESSAGES.LOGIN_FAILED);
     } finally {
       setLoading(false);
     }
@@ -158,11 +159,8 @@ const RegisterForm = () => {
 
   // Xử lý đăng nhập Google thành công
   const handleGoogleSuccess = async (credentialResponse) => {
-    console.log(credentialResponse);
     try {
       setLoading(true);
-      console.log("Google login successful");
-
       const { credential } = credentialResponse;
       // Gửi idToken lên backend để xác thực hoặc lấy thông tin user
       const res = await api.post(
@@ -176,21 +174,19 @@ const RegisterForm = () => {
           },
         }
       );
-      console.log("Google response:", res.data.user);
-      console.log("Google response:", res.data.token);
-      dispatch(login(res.data.user));
-      if (res.data && res.data.jwt) {
-        localStorage.setItem("token", res.data.token);
+      const session = getLoginSession(res.data);
+      if (session.token && session.user) {
+        saveLoginSession(res.data);
+        dispatch(login(session));
         window.location.href = "/";
 
-        toast.success("Đăng nhập Google thành công!");
+        toast.success(AUTH_MESSAGES.GOOGLE_LOGIN_SUCCESS);
         // TODO: Đóng modal hoặc redirect, ví dụ:
       } else {
-        toast.error("Đăng nhập Google thất bại!");
+        toast.error(AUTH_MESSAGES.GOOGLE_LOGIN_FAILED);
       }
     } catch (error) {
-      toast.error("Lỗi xác thực Google!");
-      console.log(error.message);
+      toast.error(error.message || AUTH_MESSAGES.GOOGLE_AUTH_FAILED);
     } finally {
       setLoading(false);
     }
@@ -210,8 +206,8 @@ const RegisterForm = () => {
               name="email"
               label="Vui lòng nhập email của bạn"
               rules={[
-                { required: true, message: "Vui lòng nhập email!" },
-                { type: "email", message: "Email không hợp lệ!" },
+                { required: true, message: AUTH_MESSAGES.EMAIL_REQUIRED },
+                { type: "email", message: AUTH_MESSAGES.EMAIL_INVALID },
               ]}
             >
               <Input size="large" placeholder="Nhập email" />
@@ -258,7 +254,7 @@ const RegisterForm = () => {
           <Form form={otpForm} layout="vertical">
             <Form.Item
               name="otp"
-              rules={[{ required: true, message: "Vui lòng nhập OTP!" }]}
+              rules={[{ required: true, message: AUTH_MESSAGES.OTP_REQUIRED }]}
             >
               <Input size="large" placeholder="Nhập mã OTP" />
             </Form.Item>
@@ -296,12 +292,12 @@ const RegisterForm = () => {
               name="password"
               label="Mật khẩu"
               rules={[
-                { required: true, message: "Vui lòng nhập mật khẩu!" },
-                { min: 8, message: "Mật khẩu phải có ít nhất 8 ký tự!" },
+                { required: true, message: AUTH_MESSAGES.PASSWORD_REQUIRED },
+                { min: 8, message: AUTH_MESSAGES.PASSWORD_MIN_LENGTH },
                 {
                   pattern: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/,
                   message:
-                    "Mật khẩu phải có ít nhất một chữ cái và một chữ số!",
+                    AUTH_MESSAGES.PASSWORD_PATTERN,
                 },
               ]}
             >
@@ -312,13 +308,13 @@ const RegisterForm = () => {
               label="Xác nhận mật khẩu"
               dependencies={["password"]}
               rules={[
-                { required: true, message: "Vui lòng xác nhận mật khẩu!" },
+                { required: true, message: AUTH_MESSAGES.CONFIRM_PASSWORD_REQUIRED },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
                     if (!value || getFieldValue("password") === value) {
                       return Promise.resolve();
                     }
-                    return Promise.reject("Mật khẩu không khớp!");
+                    return Promise.reject(AUTH_MESSAGES.PASSWORD_MISMATCH);
                   },
                 }),
               ]}
@@ -341,7 +337,7 @@ const RegisterForm = () => {
             <Form.Item
               name="password"
               label="Mật khẩu"
-              rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+              rules={[{ required: true, message: AUTH_MESSAGES.PASSWORD_REQUIRED }]}
             >
               <Input.Password placeholder="Nhập mật khẩu" size="large" />
             </Form.Item>

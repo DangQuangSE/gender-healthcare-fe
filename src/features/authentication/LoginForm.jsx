@@ -7,6 +7,8 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { login } from "../../redux/reduxStore/userSlice";
 import { useNavigate } from "react-router-dom";
+import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
+import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
 import "./LoginForm.css";
 
 const LoginForm = ({ onClose }) => {
@@ -18,115 +20,45 @@ const LoginForm = ({ onClose }) => {
   const handleLogin = async (values) => {
     try {
       setLoading(true);
-      console.log("Attempting login with:", { email: values.email });
-      console.log("API base URL:", api.defaults.baseURL);
-
       const res = await api.post("/auth/login", {
         email: values.email,
         password: values.password,
       });
 
-      console.log(" Login successful, full response:", res.data);
-      console.log(" Response structure:", Object.keys(res.data));
-
-      const jwt = res.data.jwt || res.data.accessToken || res.data.token;
-
-      // Thử nhiều cách để extract user data
-      let user = null;
-      if (res.data.user && typeof res.data.user === "object") {
-        user = res.data.user;
-        console.log(" Using res.data.user");
-      } else if (res.data.data && res.data.data.user) {
-        user = res.data.data.user;
-        console.log(" Using res.data.data.user");
-      } else if (res.data.email || res.data.role) {
-        user = res.data;
-        console.log(" Using res.data directly");
-      } else {
-        console.log(" Fallback to res.data");
-        user = res.data;
+      const session = getLoginSession(res.data);
+      if (!session.token || !session.user) {
+        throw new Error(AUTH_MESSAGES.INVALID_USER);
       }
 
-      console.log(" Extracted jwt:", jwt);
-      console.log(" Extracted user:", user);
-      console.log(" User type:", typeof user);
-      console.log(" User is null?", user === null);
-      console.log(" User is undefined?", user === undefined);
+      saveLoginSession(res.data);
+      dispatch(login(session));
 
-      // Kiểm tra user không null/undefined trước khi dispatch
-      if (!user || user === null || user === undefined) {
-        console.error(" User data is invalid:", { user, type: typeof user });
-        throw new Error("User data is null or undefined");
-      }
-
-      // Kiểm tra user có properties cần thiết không
-      if (typeof user === "object" && !user.role && !user.email) {
-        console.error(" User object missing required fields:", user);
-        throw new Error("User object missing required fields (role, email)");
-      }
-
-      console.log("About to dispatch login with:", { user, jwt });
-
-      // Lưu role trước khi dispatch để tránh bị mất
-      const userRole = user?.role;
-      console.log(" User role for navigation:", userRole);
-
-      // Clear any corrupted Redux persist data trước khi login
-      try {
-        localStorage.removeItem("persist:root");
-        console.log("🔧 Cleared persist:root");
-      } catch {
-        console.log("🔧 No persist:root to clear");
-      }
-
-      //  Lưu vào localStorage
-      localStorage.setItem("token", jwt);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      // Lưu cả user và jwt vào Redux với cấu trúc đúng
-      try {
-        dispatch(login({ user, jwt }));
-        console.log("Redux dispatch successful");
-      } catch (dispatchError) {
-        console.error(" Redux dispatch failed:", dispatchError);
-        // Vẫn tiếp tục với localStorage data
-      }
-
-      toast.success("Đăng nhập thành công!");
+      toast.success(AUTH_MESSAGES.LOGIN_SUCCESS);
       if (onClose) onClose();
 
-      // Chuyển trang đúng theo role (sử dụng userRole đã lưu)
-      if (userRole === "CUSTOMER") {
+      if (session.user.role === "CUSTOMER") {
         navigate("/");
-      } else if (userRole === "ADMIN") {
+      } else if (session.user.role === "ADMIN") {
         navigate("/admin");
-      } else if (userRole === "STAFF") {
+      } else if (session.user.role === "STAFF") {
         navigate("/staff");
-      } else if (userRole === "CONSULTANT") {
+      } else if (session.user.role === "CONSULTANT") {
         navigate("/consultant");
       } else {
-        console.log(" Unknown role, navigating to error:", userRole);
         navigate("/error");
       }
-      console.log("Login response:", res.data);
     } catch (err) {
-      console.error("Login error:", err);
-      console.error("Error response:", err.response);
-      console.error("Error message:", err.message);
-
       if (err.response?.status === 401) {
-        toast.error("Email hoặc mật khẩu không chính xác!");
+        toast.error(AUTH_MESSAGES.INVALID_CREDENTIALS);
       } else if (
         err.code === "ERR_NETWORK" ||
         err.message.includes("Network Error")
       ) {
-        toast.error(
-          "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng!"
-        );
+        toast.error(AUTH_MESSAGES.NETWORK_ERROR);
       } else if (err.code === "ERR_FAILED") {
-        toast.error("Lỗi kết nối đến server. Vui lòng thử lại sau!");
+        toast.error(AUTH_MESSAGES.SERVER_CONNECTION_ERROR);
       } else {
-        toast.error(`Lỗi đăng nhập: ${err.message || "Lỗi không xác định"}`);
+        toast.error(err.message || AUTH_MESSAGES.UNKNOWN_LOGIN_ERROR);
       }
     } finally {
       setLoading(false);
@@ -144,41 +76,18 @@ const LoginForm = ({ onClose }) => {
         { accessToken: credential },
         { headers: { "Content-Type": "application/json" } }
       );
-      //log để debug
-      console.log(" FULL response từ backend:", res.data);
-      console.log(" Response structure:", JSON.stringify(res.data, null, 2));
-
-      const { user, jwt } = res.data;
-      console.log(" Google response user:", user);
-      console.log(
-        " Google response user structure:",
-        JSON.stringify(user, null, 2)
-      );
-      console.log(" Google response token:", jwt);
-      console.log(" Google user avatar fields:", {
-        imageUrl: user?.imageUrl,
-        avatar: user?.avatar,
-        picture: user?.picture,
-        photo: user?.photo,
-        image: user?.image,
-        profilePicture: user?.profilePicture,
-        avatarUrl: user?.avatarUrl,
-        photoUrl: user?.photoUrl,
-      });
-
-      if (jwt) {
-        localStorage.setItem("token", jwt);
-        localStorage.setItem("user", JSON.stringify(user));
-        dispatch(login({ ...user, jwt }));
-        toast.success("Đăng nhập Google thành công!");
+      const session = getLoginSession(res.data);
+      if (session.token && session.user) {
+        saveLoginSession(res.data);
+        dispatch(login(session));
+        toast.success(AUTH_MESSAGES.GOOGLE_LOGIN_SUCCESS);
         if (onClose) onClose();
         navigate("/");
       } else {
-        toast.error("Đăng nhập Google thất bại! Không có token.");
+        toast.error(AUTH_MESSAGES.GOOGLE_LOGIN_FAILED);
       }
     } catch (error) {
-      toast.error("Lỗi xác thực Google!");
-      console.error("Lỗi xác thực Google:", error);
+      toast.error(error.message || AUTH_MESSAGES.GOOGLE_AUTH_FAILED);
     } finally {
       setLoading(false);
     }
@@ -195,8 +104,8 @@ const LoginForm = ({ onClose }) => {
           name="email"
           label="Email"
           rules={[
-            { required: true, message: "Vui lòng nhập email!" },
-            { type: "email", message: "Email không hợp lệ!" },
+            { required: true, message: AUTH_MESSAGES.EMAIL_REQUIRED },
+            { type: "email", message: AUTH_MESSAGES.EMAIL_INVALID },
           ]}
         >
           <Input placeholder="Nhập email" size="large" />
@@ -204,7 +113,7 @@ const LoginForm = ({ onClose }) => {
         <Form.Item
           name="password"
           label="Mật khẩu"
-          rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+          rules={[{ required: true, message: AUTH_MESSAGES.PASSWORD_REQUIRED }]}
         >
           <Input.Password placeholder="Nhập mật khẩu" size="large" />
         </Form.Item>

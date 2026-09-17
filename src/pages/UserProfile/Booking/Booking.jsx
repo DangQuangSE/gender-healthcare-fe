@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { message, Modal } from "antd";
 import api from "../../../configs/api";
+import authStorage from "../../../shared/storage/authStorage";
+import bookingStorage from "../../../shared/storage/bookingStorage";
 import RatingModal from "../../../components/RatingModal/RatingModal";
 import MedicalResultModal from "./MedicalResultModal";
 import "./Booking.css";
@@ -56,8 +58,7 @@ const Booking = () => {
 
   const navigate = useNavigate();
   const { search } = useLocation();
-  const token =
-    useSelector((state) => state.user.token) || localStorage.getItem("token");
+  const token = useSelector((state) => state.user.token) || authStorage.getToken();
 
   // Track if payment success message has been shown
   const paymentMessageShown = useRef(false);
@@ -234,7 +235,7 @@ const Booking = () => {
 
     // Check for VNPay return parameters
     if (vnpResponseCode && !paymentMessageShown.current) {
-      localStorage.removeItem("pendingBooking");
+      bookingStorage.removePendingBooking();
       paymentMessageShown.current = true;
 
       if (vnpResponseCode === "00" && vnpTransactionStatus === "00") {

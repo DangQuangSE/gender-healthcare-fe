@@ -22,15 +22,11 @@ import "./CycleTracker.css";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import api from "../../../configs/api";
+import authStorage from "../../../shared/storage/authStorage";
 
 // Sử dụng API mới: không truyền userId, chỉ dùng token ở header
 const fetchCycleLogs = () => api.get("/cycle-track/logs");
-const saveCycleLog = (logData, token) =>
-  api.post("/cycle-track/log", logData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const saveCycleLog = (logData) => api.post("/cycle-track/log", logData);
 
 const INITIAL_USER_DATA = {
   periodHistory: [],
@@ -65,7 +61,7 @@ const symptomEnumMap = {
 
 const CycleTracker = () => {
   const reduxToken = useSelector((state) => state.user.jwt || state.user.token);
-  const token = reduxToken || localStorage.getItem("token");
+  const token = reduxToken || authStorage.getToken();
 
   // Đã bỏ notifications
   const [showGuide, setShowGuide] = useState(false);

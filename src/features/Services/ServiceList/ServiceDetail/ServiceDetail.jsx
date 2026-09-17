@@ -5,6 +5,8 @@ import { Tabs, Card, Avatar, Modal, Button } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import "./ServiceDetail.css";
 import api from "../../../../configs/api.js";
+import bookingStorage from "../../../../shared/storage/bookingStorage";
+import { STORAGE_KEYS } from "../../../../shared/constants/storageKeys";
 const ServiceDetail = () => {
   const { id } = useParams();
   const [service, setService] = useState(null);
@@ -30,13 +32,13 @@ const ServiceDetail = () => {
 
   const handleSelectConsultant = (consultant) => {
     // Lưu thông tin bác sĩ đã chọn vào localStorage
-    localStorage.setItem("selectedConsultantId", consultant.id);
-    localStorage.setItem(
-      "selectedConsultantName",
+    bookingStorage.set(STORAGE_KEYS.SELECTED_CONSULTANT_ID, consultant.id);
+    bookingStorage.set(
+      STORAGE_KEYS.SELECTED_CONSULTANT_NAME,
       consultant.fullname || "Chưa có tên"
     );
-    localStorage.setItem(
-      "selectedConsultantSpecialization",
+    bookingStorage.set(
+      STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION,
       consultant.specializationNames?.[0] || "Chưa có chuyên khoa"
     );
 

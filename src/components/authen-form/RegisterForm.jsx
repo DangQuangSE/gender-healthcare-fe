@@ -142,8 +142,12 @@ const RegisterForm = () => {
         email,
         password: values.password,
       });
-      if (res.data.token) {
-        dispatch(login(res.data.user));
+      const token = res.data.jwt || res.data.accessToken || res.data.token;
+      const user = res.data.user;
+      if (token && user) {
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        dispatch(login({ user, jwt: token }));
         message.success("Đăng nhập thành công!");
         window.location.href = "/";
       } else {
@@ -158,7 +162,6 @@ const RegisterForm = () => {
 
   // Xử lý đăng nhập Google thành công
   const handleGoogleSuccess = async (credentialResponse) => {
-    console.log(credentialResponse);
     try {
       setLoading(true);
       console.log("Google login successful");
@@ -176,11 +179,12 @@ const RegisterForm = () => {
           },
         }
       );
-      console.log("Google response:", res.data.user);
-      console.log("Google response:", res.data.token);
-      dispatch(login(res.data.user));
-      if (res.data && res.data.jwt) {
-        localStorage.setItem("token", res.data.token);
+      const token = res.data.jwt || res.data.accessToken || res.data.token;
+      const user = res.data.user;
+      if (token && user) {
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        dispatch(login({ user, jwt: token }));
         window.location.href = "/";
 
         toast.success("Đăng nhập Google thành công!");

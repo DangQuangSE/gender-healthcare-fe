@@ -7,6 +7,8 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { login } from "../../redux/reduxStore/userSlice";
 import { useNavigate } from "react-router-dom";
+import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
+import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
 import "./LoginForm.css";
 
 const LoginForm = ({ onClose }) => {
@@ -22,23 +24,18 @@ const LoginForm = ({ onClose }) => {
         email: values.email,
         password: values.password,
       });
-      const responseData = res.data;
-      const jwt =
-        responseData.jwt || responseData.accessToken || responseData.token;
-      const user = responseData.user || responseData;
+      const session = getLoginSession(res.data);
 
-      // Kiểm tra user không null/undefined
-      if (!user) {
-        throw new Error("User data is null or undefined");
+      if (!session.token || !session.user) {
+        throw new Error(AUTH_MESSAGES.INVALID_USER);
       }
 
-      dispatch(login({ user, jwt }));
-      console.log("JWT:", jwt);
-      localStorage.setItem("token", jwt);
-      toast.success("Đăng nhập thành công!");
+      saveLoginSession(res.data);
+      dispatch(login(session));
+      toast.success(AUTH_MESSAGES.LOGIN_SUCCESS);
       if (onClose) onClose();
 
-      switch (user.role) {
+      switch (session.user.role) {
         case "CUSTOMER":
           navigate("/");
           break;
@@ -56,9 +53,9 @@ const LoginForm = ({ onClose }) => {
       }
     } catch (err) {
       if (err.response?.status === 401) {
-        toast.error("Email hoặc mật khẩu không chính xác!");
+        toast.error(AUTH_MESSAGES.INVALID_CREDENTIALS);
       } else {
-        toast.error("Lỗi đăng nhập!");
+        toast.error(err.message || AUTH_MESSAGES.LOGIN_FAILED);
       }
     } finally {
       setLoading(false);
@@ -76,23 +73,18 @@ const LoginForm = ({ onClose }) => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      const { user, jwt: token } = res.data;
-      if (token && user) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
-        dispatch(login({ user, jwt: token }));
-        toast.success("Đăng nhập Google thành công!");
+      const session = getLoginSession(res.data);
+      if (session.token && session.user) {
+        saveLoginSession(res.data);
+        dispatch(login(session));
+        toast.success(AUTH_MESSAGES.GOOGLE_LOGIN_SUCCESS);
         if (onClose) onClose();
         navigate("/");
-        console.log("Token", token);
       } else {
-        toast.error(
-          "Đăng nhập Google thất bại! Thiếu thông tin user hoặc token."
-        );
+        toast.error(AUTH_MESSAGES.LOGIN_MISSING_SESSION);
       }
     } catch (error) {
-      toast.error("Lỗi xác thực Google!");
-      console.error("Lỗi xác thực Google:", error);
+      toast.error(error.message || AUTH_MESSAGES.GOOGLE_AUTH_FAILED);
     } finally {
       setLoading(false);
     }
@@ -109,8 +101,8 @@ const LoginForm = ({ onClose }) => {
           name="email"
           label="Email"
           rules={[
-            { required: true, message: "Vui lòng nhập email!" },
-            { type: "email", message: "Email không hợp lệ!" },
+            { required: true, message: AUTH_MESSAGES.EMAIL_REQUIRED },
+            { type: "email", message: AUTH_MESSAGES.EMAIL_INVALID },
           ]}
         >
           <Input placeholder="Nhập email" size="large" />
@@ -118,7 +110,7 @@ const LoginForm = ({ onClose }) => {
         <Form.Item
           name="password"
           label="Mật khẩu"
-          rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+          rules={[{ required: true, message: AUTH_MESSAGES.PASSWORD_REQUIRED }]}
         >
           <Input.Password placeholder="Nhập mật khẩu" size="large" />
         </Form.Item>

@@ -1,0 +1,8 @@
+export const USER_ROLES = {
+  CUSTOMER: "CUSTOMER",
+  CONSULTANT: "CONSULTANT",
+  STAFF: "STAFF",
+  ADMIN: "ADMIN",
+};
+
+export default USER_ROLES;
