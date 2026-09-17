@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { Form, Input, Button, message, Spin } from "antd";
 import GradientButton from "../../components/common/GradientButton";
-import api from "../../configs/api";
+import {
+  configurePassword,
+  login as loginRequest,
+  loginWithGoogle,
+  requestRegistrationOtp,
+  verifyRegistrationOtp,
+} from "./api/authApi";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/reduxStore/userSlice";
 import { toast } from "react-toastify";
 import LoginGoogle from "../../api/LoginGoogle";
 import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
 import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
+import { ROUTES } from "../../shared/constants/routes";
 
 const RegisterForm = () => {
   const [step, setStep] = useState(1);
@@ -24,7 +31,7 @@ const RegisterForm = () => {
       setLoading(true);
       setEmail(value.email);
 
-      const res = await api.post("/auth/request-OTP", { email: value.email });
+      const res = await requestRegistrationOtp(value.email);
 
       // Nếu không throw thì thành công
       if (res.data && res.data.includes("OTP đã được gửi")) {
@@ -53,10 +60,7 @@ const RegisterForm = () => {
       const value = await otpForm.validateFields(["otp"]);
       setLoading(true);
       // Gửi API xác thực OTP
-      const res = await api.post("/auth/verify-Otp", {
-        email,
-        otp: value.otp,
-      });
+      const res = await verifyRegistrationOtp(email, value.otp);
       // Nếu trả về chuỗi thành công
       if (typeof res.data === "string" && res.data.toLowerCase()) {
         message.success(AUTH_MESSAGES.OTP_VERIFIED);
@@ -85,7 +89,7 @@ const RegisterForm = () => {
     try {
       setLoading(true);
 
-      const res = await api.post("/auth/config-password", {
+      const res = await configurePassword({
         email,
         password: values.password,
         confirmPassword: values.confirm,
@@ -98,7 +102,7 @@ const RegisterForm = () => {
       ) {
         // Không có user để dispatch (vì chỉ là string "Thành công!")
         message.success(AUTH_MESSAGES.REGISTRATION_SUCCESS);
-        window.location.href = "/";
+        window.location.href = ROUTES.HOME;
       }
       // Nếu API trả về object có user:
       else if (
@@ -109,7 +113,7 @@ const RegisterForm = () => {
       ) {
         dispatch(login());
         message.success(AUTH_MESSAGES.REGISTRATION_SUCCESS);
-        window.location.href = "/";
+        window.location.href = ROUTES.HOME;
       } else {
         message.error(AUTH_MESSAGES.REGISTRATION_FAILED);
       }
@@ -137,7 +141,7 @@ const RegisterForm = () => {
   const handleLogin = async (values) => {
     try {
       setLoading(true);
-      const res = await api.post("/auth/login", {
+      const res = await loginRequest({
         email,
         password: values.password,
       });
@@ -146,7 +150,7 @@ const RegisterForm = () => {
         saveLoginSession(res.data);
         dispatch(login(session));
         message.success(AUTH_MESSAGES.LOGIN_SUCCESS);
-        window.location.href = "/";
+        window.location.href = ROUTES.HOME;
       } else {
         message.error(AUTH_MESSAGES.INVALID_CREDENTIALS);
       }
@@ -163,17 +167,7 @@ const RegisterForm = () => {
       setLoading(true);
       const { credential } = credentialResponse;
       // Gửi idToken lên backend để xác thực hoặc lấy thông tin user
-      const res = await api.post(
-        "/auth/google",
-        {
-          accessToken: credential,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await loginWithGoogle(credential);
       const session = getLoginSession(res.data);
       if (session.token && session.user) {
         saveLoginSession(res.data);

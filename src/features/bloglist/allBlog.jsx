@@ -6,10 +6,17 @@ import { Select, Input } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import "./allBlog.css";
 import Breadcrumb from "../../components/Breadcrumb/Breadcrumb";
-import { API_BASE_URL } from "../../configs/serverConfig";
+import api from "../../shared/api/client";
 import { fetchBlogsByMultipleTags } from "../../api/tagAPI";
 
 const { Search } = Input;
+
+const getResponseData = (response) => response?.data?.data || response?.data;
+
+const getBlogsFromResponse = (response) => {
+  const data = getResponseData(response);
+  return data?.content || (Array.isArray(data) ? data : []);
+};
 
 const AllBlog = () => {
   const [loading, setLoading] = useState(true);
@@ -22,10 +29,17 @@ const AllBlog = () => {
 
   // Lấy tất cả tag
   useEffect(() => {
-    fetch(`${API_BASE_URL}/tags`)
-      .then((res) => res.json())
-      .then((data) => setTags(data || []))
-      .catch(() => setTags([]));
+    const loadTags = async () => {
+      try {
+        const response = await api.get("/tags");
+        const data = getResponseData(response);
+        setTags(Array.isArray(data) ? data : []);
+      } catch {
+        setTags([]);
+      }
+    };
+
+    loadTags();
   }, []);
 
   // Lấy blog theo tag hoặc tất cả
@@ -36,9 +50,10 @@ const AllBlog = () => {
         let blogs = [];
         if (selectedTags.length === 0) {
           // Không có tag nào được chọn - lấy tất cả blog
-          const response = await fetch(`${API_BASE_URL}/blog?page=0&size=50`);
-          const data = await response.json();
-          blogs = (data?.content || []).filter(
+          const response = await api.get("/blog", {
+            params: { page: 0, size: 50 },
+          });
+          blogs = getBlogsFromResponse(response).filter(
             (blog) => blog.status === "PUBLISHED"
           );
         } else {
@@ -57,11 +72,11 @@ const AllBlog = () => {
             console.error("Error fetching blogs by multiple tags:", error);
             // Fallback: nếu API multiple tags không hoạt động, dùng API single tag cho tag đầu tiên
             if (selectedTags.length > 0) {
-              const response = await fetch(
-                `${API_BASE_URL}/blog/by-tag/${selectedTags[0]}?page=0&size=50`
+              const response = await api.get(
+                `/blog/by-tag/${selectedTags[0]}`,
+                { params: { page: 0, size: 50 } }
               );
-              const data = await response.json();
-              blogs = (data?.content || []).filter(
+              blogs = getBlogsFromResponse(response).filter(
                 (blog) => blog.status === "PUBLISHED"
               );
             }

@@ -34,6 +34,7 @@ import MedicalResultFormConsulting from "../../../../components/MedicalResult/Me
 import dayjs from "dayjs"; // Only for DatePicker component, not used in MedicalResultForm
 import MedicalResultViewer from "../../../../components/MedicalResult/MedicalResultViewer";
 import PatientDetailButton from "../PatientHistory/PatientDetailButton";
+import storage from "../../../../shared/storage/storage";
 import "./PersonalSchedule.css";
 
 const PersonalSchedule = ({ userId }) => {
@@ -79,7 +80,7 @@ const PersonalSchedule = ({ userId }) => {
           timestamp: Date.now(),
           expiry: Date.now() + 5 * 60 * 1000, // 5 minutes cache
         };
-        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        storage.setJson(cacheKey, cacheData);
         console.log(`💾 [CACHE] Saved data for ${status} on ${date}`);
       } catch (error) {
         console.warn("⚠️ [CACHE] Failed to save to localStorage:", error);
@@ -92,12 +93,10 @@ const PersonalSchedule = ({ userId }) => {
     (date, status) => {
       try {
         const cacheKey = getCacheKey(date, status);
-        const cached = localStorage.getItem(cacheKey);
-        if (!cached) return null;
-
-        const cacheData = JSON.parse(cached);
+        const cacheData = storage.getJson(cacheKey);
+        if (!cacheData) return null;
         if (Date.now() > cacheData.expiry) {
-          localStorage.removeItem(cacheKey);
+          storage.remove(cacheKey);
           console.log(
             `🗑️ [CACHE] Expired cache removed for ${status} on ${date}`
           );

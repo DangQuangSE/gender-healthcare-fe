@@ -4,20 +4,34 @@ import { message, Avatar, Modal } from "antd";
 import "./BookingConfirmation.css";
 import { useState, useEffect } from "react";
 import api from "../../../configs/api";
+import authStorage from "../../../shared/storage/authStorage";
+import bookingStorage from "../../../shared/storage/bookingStorage";
+import storage from "../../../shared/storage/storage";
+import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
+import { getApiErrorMessage } from "../../../shared/api/errors";
+import { BOOKING_MESSAGES } from "../../../shared/constants/bookingMessages";
 
 const BookingConfirmation = () => {
   const navigate = useNavigate();
   const { state: booking } = useLocation();
-  const token = localStorage.getItem("token");
+  const token = authStorage.getToken();
+  const selectedConsultantId =
+    booking?.consultantId || bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_ID);
+  const selectedConsultantName = bookingStorage.get(
+    STORAGE_KEYS.SELECTED_CONSULTANT_NAME
+  );
+  const selectedConsultantSpecialization = bookingStorage.get(
+    STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION
+  );
   const [paymentMethod, setPaymentMethod] = useState("direct");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
 
   const fullBooking = {
-    ...booking,
-    price: booking.price,
-    serviceName: booking.serviceName,
+    ...(booking || {}),
+    price: booking?.price,
+    serviceName: booking?.serviceName,
   };
 
   // Debug log để kiểm tra dữ liệu
@@ -32,15 +46,15 @@ const BookingConfirmation = () => {
   );
   console.log(
     "[DEBUG] BookingConfirmation - selectedConsultantName:",
-    localStorage.getItem("selectedConsultantName")
+    selectedConsultantName
   );
   console.log(
     "[DEBUG] BookingConfirmation - selectedConsultantSpecialization:",
-    localStorage.getItem("selectedConsultantSpecialization")
+    selectedConsultantSpecialization
   );
   console.log(
     "[DEBUG] BookingConfirmation - localStorage selectedConsultantId:",
-    localStorage.getItem("selectedConsultantId")
+    selectedConsultantId
   );
 
   // Fetch user data from API /api/me
@@ -57,7 +71,7 @@ const BookingConfirmation = () => {
         setUser(response.data);
       } catch (error) {
         console.error(" Error fetching user data:", error);
-        message.error("Không thể lấy thông tin người dùng");
+        message.error(BOOKING_MESSAGES.USER_LOAD_FAILED);
       } finally {
         setLoading(false);
       }
@@ -70,7 +84,7 @@ const BookingConfirmation = () => {
     return (
       <div className="booking-confirmation-container">
         <p className="booking-no-token-message">
-          Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục đặt lịch.
+          {BOOKING_MESSAGES.NOT_AUTHENTICATED}
         </p>
       </div>
     );
@@ -80,7 +94,7 @@ const BookingConfirmation = () => {
     return (
       <div className="booking-confirmation-container">
         <p className="booking-loading-message">
-          Đang tải thông tin người dùng...
+          {BOOKING_MESSAGES.USER_LOADING}
         </p>
       </div>
     );
@@ -89,7 +103,7 @@ const BookingConfirmation = () => {
   if (!booking) {
     return (
       <div className="booking-confirmation-container">
-        <div className="booking-no-data">Không có thông tin đặt lịch!</div>
+        <div className="booking-no-data">{BOOKING_MESSAGES.NO_BOOKING_DATA}</div>
       </div>
     );
   }
@@ -107,7 +121,7 @@ const BookingConfirmation = () => {
 
   const processBooking = async () => {
     const consultantId =
-      booking.consultantId || localStorage.getItem("selectedConsultantId");
+      selectedConsultantId;
 
     const payload = {
       // userId: user.id,
@@ -139,37 +153,34 @@ const BookingConfirmation = () => {
 
       const appointmentId = res.data.appointmentId;
       if (!appointmentId) {
-        message.error("Không lấy được mã lịch hẹn từ phản hồi server.");
+        message.error(BOOKING_MESSAGES.APPOINTMENT_ID_MISSING);
         return;
       }
 
       // Trigger refresh schedule data khi user quay lại booking form
-      localStorage.setItem("shouldRefreshSchedule", "true");
-      localStorage.setItem("lastBookedServiceId", booking.serviceId);
+      storage.set(STORAGE_KEYS.SHOULD_REFRESH_SCHEDULE, "true");
+      storage.set(STORAGE_KEYS.LAST_BOOKED_SERVICE_ID, booking.serviceId);
 
       // Lưu service type vào localStorage
       if (booking.serviceType) {
-        localStorage.setItem("lastBookedServiceType", booking.serviceType);
+        storage.set(STORAGE_KEYS.LAST_BOOKED_SERVICE_TYPE, booking.serviceType);
         console.log(
           "💾 [DEBUG] Saved service type to localStorage:",
           booking.serviceType
         );
       }
 
-      message.success("Đặt lịch thành công!");
+      message.success(BOOKING_MESSAGES.SUCCESS);
 
       // Nếu chọn thanh toán VNPay, lưu thông tin và chuyển đến trang Payment
       if (paymentMethod === "vnpay") {
-        localStorage.setItem(
-          "pendingBooking",
-          JSON.stringify({
+        bookingStorage.setPendingBooking({
             appointmentId,
             paymentMethod,
             amount: fullBooking.price,
             serviceName: fullBooking.serviceName,
             serviceType: booking.serviceType, // Thêm service type vào pendingBooking
-          })
-        );
+        });
 
         // Chuyển đến trang Payment để xử lý VNPay
         navigate("/payment");
@@ -178,15 +189,11 @@ const BookingConfirmation = () => {
         navigate("/user/booking");
       }
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        (typeof error.response?.data === "string"
-          ? error.response.data
-          : "Lỗi không xác định từ máy chủ");
+      const errorMessage = getApiErrorMessage(error, BOOKING_MESSAGES.SERVER_ERROR);
 
       //  In lỗi đầy đủ nếu server có trả gì đó
       console.error(" Lỗi phản hồi từ server:", error.response?.data);
-      message.error(`Đặt lịch thất bại: ${errorMessage}`);
+      message.error(`${BOOKING_MESSAGES.FAILED}: ${errorMessage}`);
     }
   };
 
@@ -201,7 +208,7 @@ const BookingConfirmation = () => {
     // Tạo appointment trước, sau đó lưu thông tin và chuyển đến Payment giống hệt VNPay
     try {
       const consultantId =
-        booking.consultantId || localStorage.getItem("selectedConsultantId");
+        selectedConsultantId;
 
       const bookingPayload = {
         service_id: Number(booking.serviceId),
@@ -238,24 +245,24 @@ const BookingConfirmation = () => {
 
       if (!appointmentId) {
         console.error(" [DEBUG] No appointmentId in response!");
-        message.error("Không lấy được mã lịch hẹn từ phản hồi server.");
+        message.error(BOOKING_MESSAGES.APPOINTMENT_ID_MISSING);
         return;
       }
 
       // Trigger refresh schedule data khi user quay lại booking form
-      localStorage.setItem("shouldRefreshSchedule", "true");
-      localStorage.setItem("lastBookedServiceId", booking.serviceId);
+      storage.set(STORAGE_KEYS.SHOULD_REFRESH_SCHEDULE, "true");
+      storage.set(STORAGE_KEYS.LAST_BOOKED_SERVICE_ID, booking.serviceId);
 
       // Lưu service type vào localStorage
       if (booking.serviceType) {
-        localStorage.setItem("lastBookedServiceType", booking.serviceType);
+        storage.set(STORAGE_KEYS.LAST_BOOKED_SERVICE_TYPE, booking.serviceType);
         console.log(
           "💾 [DEBUG] Saved service type to localStorage (direct payment):",
           booking.serviceType
         );
       }
 
-      message.success("Đặt lịch thành công!");
+      message.success(BOOKING_MESSAGES.SUCCESS);
 
       // Lưu thông tin và chuyển đến trang Payment để xử lý create-off giống VNPay
       const pendingBookingData = {
@@ -268,10 +275,7 @@ const BookingConfirmation = () => {
       };
 
       console.log("💾 [DEBUG] Saving to localStorage:", pendingBookingData);
-      localStorage.setItem(
-        "pendingBooking",
-        JSON.stringify(pendingBookingData)
-      );
+      bookingStorage.setPendingBooking(pendingBookingData);
 
       console.log("[DEBUG] Navigating to /payment");
       // Chuyển đến trang Payment để xử lý create-off
@@ -282,14 +286,10 @@ const BookingConfirmation = () => {
       console.error(" [DEBUG] Error response data:", error.response?.data);
       console.error(" [DEBUG] Error response status:", error.response?.status);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        (typeof error.response?.data === "string"
-          ? error.response.data
-          : "Lỗi không xác định từ máy chủ");
+      const errorMessage = getApiErrorMessage(error, BOOKING_MESSAGES.SERVER_ERROR);
 
       console.error(" [DEBUG] Final error message:", errorMessage);
-      message.error(`Đặt lịch thất bại: ${errorMessage}`);
+      message.error(`${BOOKING_MESSAGES.FAILED}: ${errorMessage}`);
     }
   };
 
@@ -352,21 +352,19 @@ const BookingConfirmation = () => {
           </div>
         </div>
 
-        {booking.consultantId &&
-          localStorage.getItem("selectedConsultantName") && (
+        {booking.consultantId && selectedConsultantName && (
             <div className="booking-card">
               <h2 className="booking-card-title">Bác sĩ đã chọn</h2>
               <div className="booking-consultant-profile">
                 <Avatar size={48} className="booking-consultant-avatar">
-                  {localStorage.getItem("selectedConsultantName")?.charAt(0) ||
-                    "BS"}
+                  {selectedConsultantName?.charAt(0) || "BS"}
                 </Avatar>
                 <div className="booking-consultant-info">
                   <h3 className="booking-consultant-name">
-                    {localStorage.getItem("selectedConsultantName")}
+                    {selectedConsultantName}
                   </h3>
                   <p className="booking-consultant-specialization">
-                    {localStorage.getItem("selectedConsultantSpecialization")}
+                    {selectedConsultantSpecialization}
                   </p>
                 </div>
               </div>
@@ -397,21 +395,15 @@ const BookingConfirmation = () => {
           <div className="booking-info-item">
             <span className="booking-info-label">Bác sĩ:</span>
             <span className="booking-info-value booking-consultant-name">
-              {(booking.consultantId ||
-                localStorage.getItem("selectedConsultantId")) &&
-              localStorage.getItem("selectedConsultantName")
-                ? `${localStorage.getItem(
-                    "selectedConsultantName"
-                  )} - ${localStorage.getItem(
-                    "selectedConsultantSpecialization"
-                  )}`
-                : "Chưa chọn bác sĩ"}
+              selectedConsultantId && selectedConsultantName
+                ? `${selectedConsultantName} - ${selectedConsultantSpecialization}`
+                : BOOKING_MESSAGES.CONSULTANT_NOT_SELECTED}
             </span>
           </div>
           <div className="booking-info-item">
             <span className="booking-info-label">Ghi chú:</span>
             <span className="booking-info-value">
-              {booking.note || "(Không có)"}
+              {booking.note || BOOKING_MESSAGES.NO_NOTE}
             </span>
           </div>
           <div className="booking-info-item">

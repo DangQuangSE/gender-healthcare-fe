@@ -1,12 +1,2 @@
-import axios from "axios";
-import { API_BASE_URL } from "../shared/config/env";
-
-const chatApi = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-export default chatApi;
+// Compatibility entry point. REST chat calls use the shared authenticated client.
+export { default } from "../shared/api/client";

@@ -20,7 +20,6 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../../../configs/serverConfig";
 import {
   fetchBlogs,
   fetchBlogDetail,
@@ -42,8 +41,7 @@ import {
   CommentIcon,
 } from "../../../../components/Icons/BlogIcons";
 import "./BlogManagement.css";
-import axios from "axios";
-import api from "../../../../configs/api";
+import api from "../../../../shared/api/client";
 
 const BlogManagement = ({ userId, selectedTab }) => {
   // Form instances
@@ -97,15 +95,8 @@ const BlogManagement = ({ userId, selectedTab }) => {
   const loadBlogs = async (page = 0, size = 10) => {
     setLoadingBlogs(true);
     try {
-      const token = localStorage.getItem("token");
-
       // Sử dụng endpoint admin/all theo API documentation
-      const apiUrl = `${API_BASE_URL}/blog/admin/all?page=${page}&size=${size}`;
-      console.log(" Admin loading all blogs from:", apiUrl);
-
-      const res = await axios.get(apiUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await api.get("/blog/admin/all", { params: { page, size } });
 
       let blogData = [];
       if (res.data?.content && Array.isArray(res.data.content)) {
@@ -161,12 +152,8 @@ const BlogManagement = ({ userId, selectedTab }) => {
   const loadBlogsByStatus = async (status, page = 0, size = 10) => {
     setLoadingBlogs(true);
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/admin/by-status?status=${status}&page=${page}&size=${size}`;
-      console.log(" Admin loading blogs by status from:", apiUrl);
-
-      const res = await axios.get(apiUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      const res = await api.get("/blog/admin/by-status", {
+        params: { status, page, size },
       });
       let blogData = [];
       if (res.data?.content && Array.isArray(res.data.content)) {
@@ -296,13 +283,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
       const blogBefore = blogs.find((b) => b.id === id);
       console.log(" Blog trước khi duyệt:", blogBefore);
 
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/admin/${id}/approve`;
-      console.log("Approve API:", apiUrl);
-
-      const response = await axios.post(apiUrl, null, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const response = await api.post(`/blog/admin/${id}/approve`);
 
       console.log("Approve response:", response.data);
       toast.success("Duyệt bài viết thành công!");
@@ -326,13 +307,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
 
   const handleRejectBlog = async (id) => {
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/admin/${id}/reject`;
-      console.log(" Reject API:", apiUrl);
-
-      await axios.post(apiUrl, null, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      await api.post(`/blog/admin/${id}/reject`);
       toast.success("Từ chối bài viết thành công!");
       loadBlogs();
     } catch (error) {
@@ -347,13 +322,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
       const blogBefore = blogs.find((b) => b.id === id);
       console.log(" Blog trước khi đăng:", blogBefore);
 
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/admin/${id}/publish`;
-      console.log("🌐 Publish API:", apiUrl);
-
-      const response = await axios.post(apiUrl, null, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const response = await api.post(`/blog/admin/${id}/publish`);
 
       console.log("Publish response:", response.data);
       toast.success("Đăng bài viết thành công!");
@@ -660,16 +629,8 @@ const BlogManagement = ({ userId, selectedTab }) => {
         params.toString()
       );
 
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/${editingBlogId}?${params.toString()}`;
-      console.log("🔧 Edit blog API:", apiUrl);
-
-      // Send request with query params and form data (for image)
-      await axios.put(apiUrl, formData, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(imgFile ? { "Content-Type": "multipart/form-data" } : {}),
-        },
+      await api.put(`/blog/${editingBlogId}?${params.toString()}`, formData, {
+        headers: imgFile ? { "Content-Type": "multipart/form-data" } : {},
       });
 
       setIsEditBlogModalVisible(false);

@@ -1,11 +1,11 @@
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "../../redux/store";
-import Loading from "../../components/Loading/Loading";
+import LoadingState from "../../shared/components/feedback/LoadingState";
 
 const AppProviders = ({ children }) => (
   <Provider store={store}>
-    <PersistGate loading={<Loading />} persistor={persistor}>
+    <PersistGate loading={<LoadingState />} persistor={persistor}>
       {children}
     </PersistGate>
   </Provider>

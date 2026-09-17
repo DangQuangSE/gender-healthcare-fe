@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import Hero from "../../pages/Home/Hero/Hero";
 import Services from "../../pages/Home/Services";
@@ -8,7 +8,9 @@ import AppointmentForm from "../../features/Services/BookingService/BookingServi
 import CycleTracker from "../../features/Services/CycleTracker/CycleTracker";
 import ContactPage from "../../features/Services/Contact/ContactPage";
 import Doctor from "../../features/Services/DoctorList/DoctorList";
-import ForgotPasswordOTP from "../../features/authentication/ForgotPassword";
+import ForgotPasswordOTP from "../../features/auth/ForgotPassword";
+import LoginPage from "../../pages/Login";
+import RegisterPage from "../../pages/Register";
 import AllBlog from "../../features/bloglist/allBlog";
 import BlogDetail from "../../features/bloglist/BlogDetail";
 import Staff from "../../features/Dashboard/StaffDashboard/Staff";
@@ -23,6 +25,7 @@ import BookingConfirmation from "../../features/Services/Booking/BookingConfirma
 import Payment from "../../features/Services/Payment/Payment";
 import ProtectedRoute from "../../shared/auth/ProtectedRoute";
 import { USER_ROLES } from "../../shared/constants/roles";
+import NotFoundState from "../../shared/components/feedback/NotFoundState";
 
 const HomePage = () => (
   <>
@@ -42,6 +45,8 @@ const AppRoutes = () => (
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/services/DoctorList" element={<Doctor />} />
     <Route path="/forgot-password" element={<ForgotPasswordOTP />} />
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/register" element={<RegisterPage />} />
     <Route path="/blog" element={<AllBlog />} />
     <Route path="/blog/:id" element={<BlogDetail />} />
     <Route
@@ -79,7 +84,7 @@ const AppRoutes = () => (
     <Route path="/service-detail/:id" element={<ServiceDetail />} />
     <Route path="/booking-confirmation" element={<BookingConfirmation />} />
     <Route path="/payment" element={<Payment />} />
-    <Route path="*" element={<Navigate to="/" replace />} />
+    <Route path="*" element={<NotFoundState />} />
   </Routes>
 );
 

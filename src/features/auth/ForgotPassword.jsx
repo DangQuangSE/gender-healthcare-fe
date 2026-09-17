@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { Button, Form, Input, Space, Spin, Steps } from "antd";
+import { Button, Form, Input, Space, Spin } from "antd";
 import "./ForgotPasswordOTP.css";
 import { toast } from "react-toastify";
-
-const API_BASE_URL = "http://14.225.198.16:8085";
-const { Step } = Steps;
+import {
+  requestForgotPasswordOtp,
+  resetPassword,
+  verifyForgotPasswordOtp,
+} from "./api/authApi";
+import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 
 function ForgotPasswordOTP() {
   const [form] = Form.useForm();
@@ -18,26 +21,15 @@ function ForgotPasswordOTP() {
   const handleSendOTP = async (values) => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/auth/forgot-password/request-otp`,
-        {
-          email: values.email.trim(),
-        }
-      );
+      const response = await requestForgotPasswordOtp(values.email.trim());
       setEmailForOTP(values.email.trim());
       setCurrentStep(1);
       toast.success(
-        response.data || "OTP đã được gửi tới email. Vui lòng kiểm tra email!"
+        response.data || AUTH_MESSAGES.OTP_SENT
       ); // Lấy message từ response
       form.resetFields(["otp", "newPassword", "confirmPassword"]);
     } catch (error) {
-      console.error(
-        "Lỗi gửi OTP:",
-        error.response ? error.response.data : error.message
-      );
-      const errorMessage =
-        error.response?.data || "Gửi OTP thất bại. Vui lòng thử lại.";
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, AUTH_MESSAGES.REGISTRATION_FAILED));
     } finally {
       setLoading(false);
     }
@@ -46,23 +38,13 @@ function ForgotPasswordOTP() {
   const handleVerifyOTP = async (values) => {
     setLoading(true);
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/forgot-password/verify-otp`, {
-        email: emailForOTP,
-        otp: values.otp.trim(),
-      });
+      await verifyForgotPasswordOtp(emailForOTP, values.otp.trim());
       setCurrentStep(2);
-      toast.success("Xác minh OTP thành công. Vui lòng đặt mật khẩu mới.");
+      toast.success(AUTH_MESSAGES.OTP_VERIFICATION_SUCCESS);
       form.resetFields(["newPassword", "confirmPassword"]);
     } catch (error) {
-      console.error(
-        "Lỗi xác minh OTP:",
-        error.response ? error.response.data : error.message
-      );
-
       // Lấy thông báo lỗi cụ thể từ API (nếu có)
-      const errorMessage =
-        error.response?.data || "Mã OTP không hợp lệ hoặc đã hết hạn!";
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, AUTH_MESSAGES.OTP_INVALID));
     } finally {
       setLoading(false);
     }
@@ -72,30 +54,21 @@ function ForgotPasswordOTP() {
     setLoading(true);
 
     if (values.newPassword !== values.confirmPassword) {
-      toast.error("Mật khẩu mới và mật khẩu xác nhận không khớp!");
+      toast.error(AUTH_MESSAGES.PASSWORD_RESET_MISMATCH);
       setLoading(false);
       return;
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/forgot-password/resetPass`, {
+      await resetPassword({
         email: emailForOTP,
         password: values.newPassword,
         confirmPassword: values.confirmPassword,
       });
-      toast.success(
-        "Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới."
-      );
+      toast.success(AUTH_MESSAGES.PASSWORD_RESET_SUCCESS);
       navigate("/");
     } catch (error) {
-      console.error(
-        "Lỗi đặt lại mật khẩu:",
-        error.response ? error.response.data : error.message
-      );
-      toast.error(
-        error.response?.data?.message ||
-          "Đặt lại mật khẩu thất bại. Vui lòng thử lại."
-      );
+      toast.error(getApiErrorMessage(error, AUTH_MESSAGES.REGISTRATION_FAILED));
     } finally {
       setLoading(false);
     }
@@ -107,8 +80,7 @@ function ForgotPasswordOTP() {
         return (
           <>
             <p className="fp-otp-step-description">
-              Nhập địa chỉ email đã đăng ký của bạn. Chúng tôi sẽ gửi mã OTP để
-              xác minh.
+              {AUTH_MESSAGES.FORGOT_EMAIL_DESCRIPTION}
             </p>
             <Form
               form={form}
@@ -118,16 +90,16 @@ function ForgotPasswordOTP() {
               className="otp-form"
             >
               <Form.Item
-                label="Email"
+                label={AUTH_MESSAGES.EMAIL_LABEL}
                 name="email"
                 rules={[
-                  { required: true, message: "Vui lòng nhập email!" },
-                  { type: "email", message: "Email không đúng định dạng!" },
+                  { required: true, message: AUTH_MESSAGES.EMAIL_REQUIRED },
+                  { type: "email", message: AUTH_MESSAGES.EMAIL_FORMAT_INVALID },
                 ]}
               >
                 <Input
                   className="otp-input"
-                  placeholder="Nhập email của bạn"
+                  placeholder={AUTH_MESSAGES.EMAIL_PLACEHOLDER}
                   disabled={loading}
                 />
               </Form.Item>
@@ -139,7 +111,7 @@ function ForgotPasswordOTP() {
                   block
                   className="gradient-button"
                 >
-                  Gửi Mã OTP
+                  {AUTH_MESSAGES.SEND_OTP}
                 </Button>
               </Form.Item>
               <Button
@@ -149,7 +121,7 @@ function ForgotPasswordOTP() {
                 disabled={loading}
                 className="fp-otp-back-link"
               >
-                Quay Lại Trang Chủ
+                {AUTH_MESSAGES.BACK_HOME}
               </Button>
             </Form>
           </>
@@ -158,8 +130,8 @@ function ForgotPasswordOTP() {
         return (
           <>
             <p className="step-description">
-              Một mã OTP đã được gửi đến email <strong>{emailForOTP}</strong>.
-              Vui lòng nhập mã OTP.
+              {AUTH_MESSAGES.OTP_SENT_DESCRIPTION} <strong>{emailForOTP}</strong>.
+              {` ${AUTH_MESSAGES.OTP_ENTER_DESCRIPTION}`}
             </p>
             <Form
               form={form}
@@ -169,22 +141,13 @@ function ForgotPasswordOTP() {
               className="fp-otp-form"
             >
               <Form.Item
-                label="Mã OTP"
+                label={AUTH_MESSAGES.OTP_LABEL}
                 name="otp"
-                rules={[{ required: true, message: "Vui lòng nhập mã OTP!" }]}
+                rules={[{ required: true, message: AUTH_MESSAGES.OTP_REQUIRED }]}
               >
                 <Input
                   className="fp-otp-input"
-                  placeholder="Nhập mã OTP (6 chữ số)"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập mật khẩu!" },
-                    { min: 8, message: "Mật khẩu phải có ít nhất 8 ký tự!" },
-                    {
-                      pattern: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/,
-                      message:
-                        "Mật khẩu phải có ít nhất một chữ cái và một chữ số!",
-                    },
-                  ]}
+                  placeholder={AUTH_MESSAGES.OTP_PLACEHOLDER}
                   disabled={loading}
                 />
               </Form.Item>
@@ -198,7 +161,7 @@ function ForgotPasswordOTP() {
                     disabled={loading}
                     className="secondary-button"
                   >
-                    Quay lại
+                    {AUTH_MESSAGES.BACK}
                   </Button>
                   <Button
                     type="primary"
@@ -206,7 +169,7 @@ function ForgotPasswordOTP() {
                     loading={loading}
                     className="gradient-button"
                   >
-                    Xác Nhận OTP
+                    {AUTH_MESSAGES.CONFIRM_OTP}
                   </Button>
                 </Space>
               </Form.Item>
@@ -216,7 +179,7 @@ function ForgotPasswordOTP() {
                 disabled={loading}
                 className="fp-otp-resend-link"
               >
-                Gửi lại OTP
+                {AUTH_MESSAGES.RESEND_OTP}
               </Button>
             </Form>
           </>
@@ -225,7 +188,7 @@ function ForgotPasswordOTP() {
         return (
           <>
             <p className="step-description">
-              Vui lòng nhập mật khẩu mới cho tài khoản của bạn.
+              {AUTH_MESSAGES.NEW_PASSWORD_DESCRIPTION}
             </p>
             <Form
               form={form}
@@ -235,29 +198,35 @@ function ForgotPasswordOTP() {
               className="otp-form"
             >
               <Form.Item
-                label="Mật khẩu mới"
+                label={AUTH_MESSAGES.NEW_PASSWORD_LABEL}
                 name="newPassword"
                 rules={[
-                  { required: true, message: "Vui lòng nhập mật khẩu mới!" },
-                  { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự!" },
+                  {
+                    required: true,
+                    message: AUTH_MESSAGES.PASSWORD_NEW_REQUIRED,
+                  },
+                  {
+                    min: 6,
+                    message: AUTH_MESSAGES.PASSWORD_NEW_MIN_LENGTH,
+                  },
                 ]}
                 hasFeedback
               >
                 <Input.Password
                   className="otp-input"
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder={AUTH_MESSAGES.NEW_PASSWORD_PLACEHOLDER}
                   disabled={loading}
                 />
               </Form.Item>
               <Form.Item
-                label="Xác nhận mật khẩu mới"
+                label={AUTH_MESSAGES.CONFIRM_NEW_PASSWORD_LABEL}
                 name="confirmPassword"
                 dependencies={["newPassword"]}
                 hasFeedback
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng xác nhận mật khẩu mới!",
+                    message: AUTH_MESSAGES.PASSWORD_CONFIRM_NEW_REQUIRED,
                   },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
@@ -265,7 +234,7 @@ function ForgotPasswordOTP() {
                         return Promise.resolve();
                       }
                       return Promise.reject(
-                        new Error("Hai mật khẩu bạn nhập không khớp!")
+                        new Error(AUTH_MESSAGES.PASSWORD_CONFIRM_MISMATCH)
                       );
                     },
                   }),
@@ -273,7 +242,7 @@ function ForgotPasswordOTP() {
               >
                 <Input.Password
                   className="otp-input"
-                  placeholder="Xác nhận mật khẩu mới"
+                  placeholder={AUTH_MESSAGES.CONFIRM_NEW_PASSWORD_PLACEHOLDER}
                   disabled={loading}
                 />
               </Form.Item>
@@ -285,14 +254,14 @@ function ForgotPasswordOTP() {
                   block
                   className="gradient-button"
                 >
-                  Đặt Lại Mật Khẩu
+                  {AUTH_MESSAGES.RESET_PASSWORD}
                 </Button>
               </Form.Item>
             </Form>
           </>
         );
       default:
-        return <p>Đã có lỗi xảy ra hoặc bước không hợp lệ.</p>;
+        return <p>{AUTH_MESSAGES.RESET_INVALID_STEP}</p>;
     }
   };
 
@@ -300,14 +269,14 @@ function ForgotPasswordOTP() {
     <div className="fp-otp-page">
       <Spin
         spinning={loading}
-        tip="Đang xử lý..."
+        tip={AUTH_MESSAGES.RESET_PROCESSING}
         size="large"
         fullscreen={loading}
       >
         <div className="fp-otp-card">
           <div className="fp-otp-card-header">
             {/* Logo */}
-            <h2 className="fp-otp-card-title">Quên Mật Khẩu</h2>
+            <h2 className="fp-otp-card-title">{AUTH_MESSAGES.FORGOT_PASSWORD_TITLE}</h2>
           </div>
 
           <div className="fp-otp-step-content">{renderStepContent()}</div>

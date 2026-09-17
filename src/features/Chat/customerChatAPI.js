@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../../shared/api/client";
 
 /**
  * Customer Chat API Service
@@ -6,60 +6,7 @@ import axios from "axios";
  */
 class CustomerChatAPIService {
   constructor() {
-    // Create axios instance without auth interceptors
-    this.api = axios.create({
-      baseURL: "http://localhost:8080/api",
-      timeout: 10000,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    // Request interceptor - NO AUTH for customer API
-    this.api.interceptors.request.use(
-      (config) => {
-        console.log("[CUSTOMER CHAT API] Request:", {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          fullURL: `${config.baseURL}${config.url}`,
-          data: config.data,
-          params: config.params,
-        });
-
-        // Explicitly remove any auth headers that might be added
-        delete config.headers.Authorization;
-
-        return config;
-      },
-      (error) => {
-        console.error(" [CUSTOMER CHAT API] Request Error:", error);
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor for error handling
-    this.api.interceptors.response.use(
-      (response) => {
-        console.log("[CUSTOMER CHAT API] Response:", {
-          status: response.status,
-          url: response.config.url,
-          data: response.data,
-        });
-        return response;
-      },
-      (error) => {
-        console.error(" [CUSTOMER CHAT API] Error:", {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          url: error.config?.url,
-          message: error.message,
-          data: error.response?.data,
-        });
-
-        // Don't redirect on 401 for customer API - it's expected to be public
-        return Promise.reject(error);
-      }
-    );
+    this.api = api;
   }
 
   /**

@@ -24,6 +24,38 @@ export const AUTH_MESSAGES = {
   PASSWORD_PATTERN: "Mật khẩu phải có ít nhất một chữ cái và một chữ số!",
   CONFIRM_PASSWORD_REQUIRED: "Vui lòng xác nhận mật khẩu!",
   OTP_REQUIRED: "Vui lòng nhập OTP!",
+  EMAIL_FORMAT_INVALID: "Email không đúng định dạng!",
+  PASSWORD_NEW_REQUIRED: "Vui lòng nhập mật khẩu mới!",
+  PASSWORD_CONFIRM_NEW_REQUIRED: "Vui lòng xác nhận mật khẩu mới!",
+  PASSWORD_NEW_MIN_LENGTH: "Mật khẩu phải có ít nhất 6 ký tự!",
+  PASSWORD_RESET_MISMATCH: "Mật khẩu mới và mật khẩu xác nhận không khớp!",
+  PASSWORD_CONFIRM_MISMATCH: "Hai mật khẩu bạn nhập không khớp!",
+  OTP_VERIFICATION_SUCCESS:
+    "Xác minh OTP thành công. Vui lòng đặt mật khẩu mới.",
+  PASSWORD_RESET_SUCCESS:
+    "Đặt lại mật khẩu thành công! Vui lòng đăng nhập bằng mật khẩu mới.",
+  RESET_PROCESSING: "Đang xử lý...",
+  RESET_INVALID_STEP: "Đã có lỗi xảy ra hoặc bước không hợp lệ.",
+  SEND_OTP: "Gửi Mã OTP",
+  CONFIRM_OTP: "Xác Nhận OTP",
+  RESET_PASSWORD: "Đặt Lại Mật Khẩu",
+  BACK_HOME: "Quay Lại Trang Chủ",
+  FORGOT_EMAIL_DESCRIPTION:
+    "Nhập địa chỉ email đã đăng ký của bạn. Chúng tôi sẽ gửi mã OTP để xác minh.",
+  OTP_SENT_DESCRIPTION: "Một mã OTP đã được gửi đến email",
+  OTP_ENTER_DESCRIPTION: "Vui lòng nhập mã OTP.",
+  OTP_LABEL: "Mã OTP",
+  OTP_PLACEHOLDER: "Nhập mã OTP (6 chữ số)",
+  BACK: "Quay lại",
+  RESEND_OTP: "Gửi lại OTP",
+  NEW_PASSWORD_DESCRIPTION: "Vui lòng nhập mật khẩu mới cho tài khoản của bạn.",
+  NEW_PASSWORD_LABEL: "Mật khẩu mới",
+  NEW_PASSWORD_PLACEHOLDER: "Nhập mật khẩu mới",
+  CONFIRM_NEW_PASSWORD_LABEL: "Xác nhận mật khẩu mới",
+  CONFIRM_NEW_PASSWORD_PLACEHOLDER: "Xác nhận mật khẩu mới",
+  FORGOT_PASSWORD_TITLE: "Quên Mật Khẩu",
+  EMAIL_LABEL: "Email",
+  EMAIL_PLACEHOLDER: "Nhập email của bạn",
 };
 
 export default AUTH_MESSAGES;

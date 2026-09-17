@@ -1,5 +1,4 @@
-import httpClient from "../shared/api/httpClient";
-import uploadClient from "../shared/api/uploadClient";
+import httpClient, { uploadClient } from "../shared/api/client";
 
 export default httpClient;
 export const upload = uploadClient;

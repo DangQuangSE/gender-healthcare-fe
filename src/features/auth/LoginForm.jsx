@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Form, Input } from "antd";
 import GradientButton from "../../components/common/GradientButton";
 import LoginGoogle from "../../api/LoginGoogle";
-import api from "../../configs/api";
+import { login as loginRequest, loginWithGoogle } from "./api/authApi";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { login } from "../../redux/reduxStore/userSlice";
 import { useNavigate } from "react-router-dom";
 import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
 import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
+import { USER_ROLES } from "../../shared/constants/roles";
+import { ROUTES } from "../../shared/constants/routes";
 import "./LoginForm.css";
 
 const LoginForm = ({ onClose }) => {
@@ -20,7 +22,7 @@ const LoginForm = ({ onClose }) => {
   const handleLogin = async (values) => {
     try {
       setLoading(true);
-      const res = await api.post("/auth/login", {
+      const res = await loginRequest({
         email: values.email,
         password: values.password,
       });
@@ -36,14 +38,14 @@ const LoginForm = ({ onClose }) => {
       toast.success(AUTH_MESSAGES.LOGIN_SUCCESS);
       if (onClose) onClose();
 
-      if (session.user.role === "CUSTOMER") {
-        navigate("/");
-      } else if (session.user.role === "ADMIN") {
-        navigate("/admin");
-      } else if (session.user.role === "STAFF") {
-        navigate("/staff");
-      } else if (session.user.role === "CONSULTANT") {
-        navigate("/consultant");
+      if (session.user.role === USER_ROLES.CUSTOMER) {
+        navigate(ROUTES.HOME);
+      } else if (session.user.role === USER_ROLES.ADMIN) {
+        navigate(ROUTES.ADMIN);
+      } else if (session.user.role === USER_ROLES.STAFF) {
+        navigate(ROUTES.STAFF);
+      } else if (session.user.role === USER_ROLES.CONSULTANT) {
+        navigate(ROUTES.CONSULTANT);
       } else {
         navigate("/error");
       }
@@ -52,7 +54,7 @@ const LoginForm = ({ onClose }) => {
         toast.error(AUTH_MESSAGES.INVALID_CREDENTIALS);
       } else if (
         err.code === "ERR_NETWORK" ||
-        err.message.includes("Network Error")
+        err.message?.includes("Network Error")
       ) {
         toast.error(AUTH_MESSAGES.NETWORK_ERROR);
       } else if (err.code === "ERR_FAILED") {
@@ -71,18 +73,14 @@ const LoginForm = ({ onClose }) => {
       setLoading(true);
       const { credential } = credentialResponse;
 
-      const res = await api.post(
-        "/auth/google",
-        { accessToken: credential },
-        { headers: { "Content-Type": "application/json" } }
-      );
+      const res = await loginWithGoogle(credential);
       const session = getLoginSession(res.data);
       if (session.token && session.user) {
         saveLoginSession(res.data);
         dispatch(login(session));
         toast.success(AUTH_MESSAGES.GOOGLE_LOGIN_SUCCESS);
         if (onClose) onClose();
-        navigate("/");
+        navigate(ROUTES.HOME);
       } else {
         toast.error(AUTH_MESSAGES.GOOGLE_LOGIN_FAILED);
       }
@@ -119,7 +117,7 @@ const LoginForm = ({ onClose }) => {
         </Form.Item>
         <div className="forgot-password">
           <span>Quên mật khẩu?</span>
-          <a href="/forgot-password">Lấy lại mật khẩu</a>
+          <a href={ROUTES.FORGOT_PASSWORD}>Lấy lại mật khẩu</a>
         </div>
         <Form.Item className="submit-button">
           <GradientButton htmlType="submit" block loading={loading}>

@@ -1,7 +1,7 @@
 import "./AuthButtons.css";
 import GradientButton from "../../common/GradientButton.jsx";
 import { useState, useEffect } from "react";
-import AuthModal from "../../../features/authentication/AuthModal";
+import AuthModal from "../../../features/auth/AuthModal";
 import { useDispatch, useSelector } from "react-redux";
 import {
   UserOutlined,

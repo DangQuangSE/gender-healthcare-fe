@@ -31,6 +31,9 @@ import {
   getMessageBubbleStyle,
 } from "./chatColors";
 import { WEBSOCKET_URL } from "../../configs/serverConfig";
+import authStorage from "../../shared/storage/authStorage";
+import storage from "../../shared/storage/storage";
+import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
 import "./CustomerChatWidget.css";
 
 const { Text } = Typography;
@@ -50,7 +53,7 @@ const CustomerChatWidget = () => {
   const [sessionStatus, setSessionStatus] = useState("WAITING"); // WAITING, ACTIVE, COMPLETED
   const [unreadCount, setUnreadCount] = useState(() => {
     // Load unread count from localStorage on init
-    const saved = localStorage.getItem("chat_unread_count");
+    const saved = storage.get(STORAGE_KEYS.CHAT_UNREAD_COUNT);
     return saved ? parseInt(saved, 10) : 0;
   });
   const [lastReadMessageId, setLastReadMessageId] = useState(null);
@@ -86,7 +89,7 @@ const CustomerChatWidget = () => {
 
       // Reset unread count after marking as read
       setUnreadCount(0);
-      localStorage.setItem("chat_unread_count", "0");
+      storage.set(STORAGE_KEYS.CHAT_UNREAD_COUNT, "0");
     } catch (error) {
       console.error(
         " [CUSTOMER MARK READ] Failed to mark messages as read:",
@@ -98,15 +101,7 @@ const CustomerChatWidget = () => {
 
   // Get current user info from Redux store first, then fallback to localStorage
   const reduxUser = useSelector((state) => state.user?.user);
-  const reduxToken = useSelector((state) => state.user?.token);
-
-  // Fallback to localStorage if Redux is empty
-  const userData =
-    localStorage.getItem("user") || localStorage.getItem("currentUser") || "{}";
-  const localStorageUser = JSON.parse(userData);
-
-  // Use Redux data first, then localStorage as fallback
-  const currentUser = reduxUser || localStorageUser;
+  const currentUser = reduxUser || authStorage.getUser() || {};
   const userRole = currentUser?.role || "CUSTOMER";
 
   // Auto mark-read when new messages arrive and chat is open
@@ -160,8 +155,8 @@ const CustomerChatWidget = () => {
                   setUnreadCount((prev) => {
                     const newCount = prev + 1;
                     // Save to localStorage
-                    localStorage.setItem(
-                      "chat_unread_count",
+                    storage.set(
+                      STORAGE_KEYS.CHAT_UNREAD_COUNT,
                       newCount.toString()
                     );
                     return newCount;
@@ -329,7 +324,7 @@ const CustomerChatWidget = () => {
 
   // Save unread count to localStorage
   const saveUnreadCount = (count) => {
-    localStorage.setItem("chat_unread_count", count.toString());
+    storage.set(STORAGE_KEYS.CHAT_UNREAD_COUNT, count.toString());
   };
 
   // Update unread count with persistence
@@ -414,8 +409,8 @@ const CustomerChatWidget = () => {
       prevMessageCountRef.current = staffMessages.length;
 
       // Save current timestamp as last seen
-      localStorage.setItem(
-        "chat_last_seen_timestamp",
+      storage.set(
+        STORAGE_KEYS.CHAT_LAST_SEEN_TIMESTAMP,
         new Date().toISOString()
       );
 
@@ -483,7 +478,6 @@ const CustomerChatWidget = () => {
   const toggleWidget = () => {
     console.log("[WIDGET] Chat button clicked!");
     console.log(" [WIDGET] Redux user:", reduxUser);
-    console.log(" [WIDGET] LocalStorage user:", localStorageUser);
     console.log(" [WIDGET] Final user:", currentUser);
     console.log(" [WIDGET] Final role:", userRole);
     console.log(" [WIDGET] Role comparison:", {
@@ -509,7 +503,7 @@ const CustomerChatWidget = () => {
       console.log(" [WIDGET] Current location:", window.location.pathname);
 
       // Set selected menu item BEFORE navigation
-      localStorage.setItem("staffSelectedMenuItem", "qa_waiting");
+      storage.set(STORAGE_KEYS.STAFF_SELECTED_MENU_ITEM, "qa_waiting");
       console.log(
         " [WIDGET] Set localStorage staffSelectedMenuItem to qa_waiting"
       );
@@ -541,8 +535,8 @@ const CustomerChatWidget = () => {
       }
     } else {
       // Closing chat widget - save current timestamp and fetch unread count
-      localStorage.setItem(
-        "chat_last_seen_timestamp",
+      storage.set(
+        STORAGE_KEYS.CHAT_LAST_SEEN_TIMESTAMP,
         new Date().toISOString()
       );
 

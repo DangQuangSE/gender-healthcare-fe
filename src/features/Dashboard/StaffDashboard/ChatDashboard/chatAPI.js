@@ -1,5 +1,4 @@
-import axios from "axios";
-import { API_BASE_URL } from "../../../../configs/serverConfig.js";
+import api from "../../../../shared/api/client";
 
 /**
  * Chat API Service for Staff Dashboard
@@ -7,78 +6,7 @@ import { API_BASE_URL } from "../../../../configs/serverConfig.js";
  */
 class ChatAPIService {
   constructor() {
-    this.baseURL = API_BASE_URL;
-
-    // Create axios instance
-    this.api = axios.create({
-      baseURL: this.baseURL,
-      timeout: 10000,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    // Request interceptor để thêm auth token và logging
-    this.api.interceptors.request.use(
-      (config) => {
-        console.log("[STAFF CHAT API] Request:", {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          baseURL: config.baseURL,
-          fullURL: `${config.baseURL}${config.url}`,
-          data: config.data,
-          params: config.params,
-        });
-
-        const token = localStorage.getItem("token");
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-          console.log("🔐 [STAFF CHAT API] Auth token added");
-        } else {
-          console.log("⚠️ [STAFF CHAT API] No auth token found");
-        }
-        return config;
-      },
-      (error) => {
-        console.error(" [STAFF CHAT API] Request Error:", error);
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor để handle errors và logging
-    this.api.interceptors.response.use(
-      (response) => {
-        console.log("[STAFF CHAT API] Response:", {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.config.url,
-          data: response.data,
-          dataLength: Array.isArray(response.data)
-            ? response.data.length
-            : "N/A",
-        });
-        return response;
-      },
-      (error) => {
-        console.error(" [STAFF CHAT API] Response Error:", {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          url: error.config?.url,
-          message: error.message,
-          data: error.response?.data,
-        });
-
-        if (error.response?.status === 401) {
-          console.log(
-            "🔐 [STAFF CHAT API] Unauthorized - redirecting to login"
-          );
-          localStorage.removeItem("token");
-          // window.location.href = "/login";
-        }
-
-        return Promise.reject(error);
-      }
-    );
+    this.api = api;
   }
 
   /**

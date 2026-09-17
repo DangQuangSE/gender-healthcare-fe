@@ -17,8 +17,7 @@ export const BASE_URL =
 export const API_BASE_URL = env.VITE_API_BASE_URL || `${BASE_URL}/api`;
 export const WEBSOCKET_URL = env.VITE_WEBSOCKET_URL || `${BASE_URL}/ws/chat`;
 export const CLOUDINARY_UPLOAD_URL =
-  env.VITE_CLOUDINARY_UPLOAD_URL ||
-  "https://api.cloudinary.com/v1_1/dycwhc7sn/image/upload";
+  env.VITE_CLOUDINARY_UPLOAD_URL || "";
 
 export const { IP, PORT, PROTOCOL } = SERVER_CONFIG;
 

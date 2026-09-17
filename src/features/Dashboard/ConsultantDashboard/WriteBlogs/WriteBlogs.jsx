@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../../../configs/serverConfig";
+import api from "../../../../shared/api/client";
 import {
   fetchBlogs,
   fetchBlogDetail,
@@ -34,7 +34,6 @@ import {
   CommentIcon,
 } from "../../../../components/Icons/BlogIcons";
 import "./WriteBlogs.css";
-import axios from "axios";
 
 const WriteBlogs = ({ userId, selectedTab }) => {
   // Form instances
@@ -88,14 +87,8 @@ const WriteBlogs = ({ userId, selectedTab }) => {
   const loadBlogs = async (page = 0, size = 10) => {
     setLoadingBlogs(true);
     try {
-      const token = localStorage.getItem("token");
       // Consultant: lấy tất cả blog của mình (mọi trạng thái)
-      const apiUrl = `${API_BASE_URL}/blog/my-blogs?page=${page}&size=${size}`;
-      console.log(" Consultant loading all blogs from:", apiUrl);
-
-      const res = await axios.get(apiUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await api.get("/blog/my-blogs", { params: { page, size } });
       let blogData = [];
       if (res.data?.content && Array.isArray(res.data.content)) {
         blogData = res.data.content;
@@ -148,12 +141,8 @@ const WriteBlogs = ({ userId, selectedTab }) => {
   const loadBlogsByStatus = async (status, page = 0, size = 10) => {
     setLoadingBlogs(true);
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/my-blogs/by-status?status=${status}&page=${page}&size=${size}`;
-      console.log(" Consultant loading blogs by status from:", apiUrl);
-
-      const res = await axios.get(apiUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      const res = await api.get("/blog/my-blogs/by-status", {
+        params: { status, page, size },
       });
       let blogData = [];
       if (res.data?.content && Array.isArray(res.data.content)) {
@@ -239,9 +228,7 @@ const WriteBlogs = ({ userId, selectedTab }) => {
       let res;
       if (tagIds.length === 1) {
         // Single tag - use existing API
-        const apiUrl = `${API_BASE_URL}/blog/by-tag/${tagIds[0]}`;
-        console.log("🏷️ Filter blogs by single tag from:", apiUrl);
-        res = await axios.get(apiUrl);
+        res = await api.get(`/blog/by-tag/${tagIds[0]}`);
       } else {
         // Multiple tags - use new API
         console.log("🏷️ Filter blogs by multiple tags:", tagIds);
@@ -432,13 +419,7 @@ const WriteBlogs = ({ userId, selectedTab }) => {
         // Gửi blog để admin duyệt nếu tạo thành công
         if (response.data && response.data.id) {
           try {
-            const token = localStorage.getItem("token");
-            const apiUrl = `${API_BASE_URL}/blog/${response.data.id}/submit`;
-            console.log(" Submit blog API:", apiUrl);
-
-            await axios.post(apiUrl, null, {
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
+            await api.post(`/blog/${response.data.id}/submit`);
             toast.success("Đã gửi blog để admin duyệt!");
           } catch (submitError) {
             toast.error(
@@ -580,16 +561,8 @@ const WriteBlogs = ({ userId, selectedTab }) => {
         params.toString()
       );
 
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/${editingBlogId}?${params.toString()}`;
-      console.log("🔧 Edit blog API:", apiUrl);
-
-      // Send request with query params and form data (for image)
-      await axios.put(apiUrl, formData, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(imgFile ? { "Content-Type": "multipart/form-data" } : {}),
-        },
+      await api.put(`/blog/${editingBlogId}?${params.toString()}`, formData, {
+        headers: imgFile ? { "Content-Type": "multipart/form-data" } : {},
       });
 
       setIsEditBlogModalVisible(false);
@@ -622,11 +595,7 @@ const WriteBlogs = ({ userId, selectedTab }) => {
     if (!blogId) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = `${API_BASE_URL}/blog/${blogId}`;
-      await axios.delete(apiUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      await api.delete(`/blog/${blogId}`);
 
       toast.success("Xóa blog thành công!");
 

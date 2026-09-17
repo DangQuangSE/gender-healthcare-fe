@@ -20,7 +20,6 @@ import {
   CheckOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
 import { toast } from "react-toastify";
 import api from "../../../../configs/api";
 import "../../AdminDashboard/BookingDashboard/BookingDashboard.css";
@@ -348,17 +347,9 @@ const StaffBookingDashboard = () => {
   // Hàm cập nhật thông tin y tế cho bệnh nhân
   const updateMedicalInfo = async (medicalData) => {
     try {
-      const authToken = localStorage.getItem("token");
-
-      const response = await axios.put(
-        "/api/medical-profile/update-medical-info",
-        medicalData,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.put(
+        "/medical-profile/update-medical-info",
+        medicalData
       );
 
       if (response.status === 200) {
