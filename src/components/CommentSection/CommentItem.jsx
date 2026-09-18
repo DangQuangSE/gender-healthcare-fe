@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import api from "../../configs/api";
-import authStorage from "../../shared/storage/authStorage";
 import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
+import { deleteComment } from "../../features/blog/api/commentApi";
 const CommentItem = ({ comment, currentUser, onCommentDeleted }) => {
   const [deleting, setDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -42,13 +41,7 @@ const CommentItem = ({ comment, currentUser, onCommentDeleted }) => {
 
     try {
       setDeleting(true);
-      const token = authStorage.getToken();
-      if (!token) {
-        toast.error(CONTENT_MESSAGES.LOGIN_REQUIRED);
-        return;
-      }
-
-      await api.delete(`/comment/${comment.id}`);
+      await deleteComment(comment.id);
 
       onCommentDeleted(comment.id);
       toast.success(CONTENT_MESSAGES.COMMENT_DELETE_SUCCESS);

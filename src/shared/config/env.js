@@ -1,6 +1,6 @@
 const defaultProtocol = "http";
 const defaultHost = "localhost";
-const defaultPort = "8080";
+const defaultPort = "8085";
 
 const env = import.meta.env || {};
 
@@ -18,6 +18,9 @@ export const API_BASE_URL = env.VITE_API_BASE_URL || `${BASE_URL}/api`;
 export const WEBSOCKET_URL = env.VITE_WEBSOCKET_URL || `${BASE_URL}/ws/chat`;
 export const CLOUDINARY_UPLOAD_URL =
   env.VITE_CLOUDINARY_UPLOAD_URL || "";
+export const CLOUDINARY_UPLOAD_PRESET =
+  env.VITE_CLOUDINARY_UPLOAD_PRESET || "";
+export const GOOGLE_CLIENT_ID = env.VITE_GOOGLE_CLIENT_ID || "";
 
 export const { IP, PORT, PROTOCOL } = SERVER_CONFIG;
 
@@ -27,6 +30,8 @@ export default {
   API_BASE_URL,
   WEBSOCKET_URL,
   CLOUDINARY_UPLOAD_URL,
+  CLOUDINARY_UPLOAD_PRESET,
+  GOOGLE_CLIENT_ID,
   IP,
   PORT,
   PROTOCOL,

@@ -15,7 +15,11 @@ import {
   DeleteOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import api from "../../../configs/api";
+import {
+  createCertification,
+  updateCertification,
+} from "../../../features/profile/profileApi";
+import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
 
 const CertificateModal = ({
   visible,
@@ -93,7 +97,7 @@ const CertificateModal = ({
         const cert = certificates[0];
 
         if (!cert.name) {
-          message.error("Vui lòng nhập tên chứng chỉ!");
+          message.error(NOTIFICATION_MESSAGES.CERTIFICATE.NAME_REQUIRED);
           return;
         }
 
@@ -107,27 +111,18 @@ const CertificateModal = ({
         }
 
         try {
-          const response = await api.put(
-            `/certifications/${cert.id}`,
-            formData,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            }
-          );
+          const response = await updateCertification(cert.id, formData);
 
-          message.success("Cập nhật chứng chỉ thành công!");
+          message.success(NOTIFICATION_MESSAGES.CERTIFICATE.UPDATE_SUCCESS);
           onSave([response.data]);
-        } catch (error) {
-          console.error("Error updating certificate:", error);
-          message.error("Lỗi khi cập nhật chứng chỉ!");
+        } catch {
+          message.error(NOTIFICATION_MESSAGES.CERTIFICATE.UPDATE_FAILED);
         }
       } else {
         // Chế độ tạo mới - logic cũ
         const certificatePromises = certificates.map(async (cert, index) => {
           if (!cert.name || !cert.imageFile) {
-            message.error(`Chứng chỉ #${index + 1} thiếu tên hoặc hình ảnh!`);
+            message.error(NOTIFICATION_MESSAGES.CERTIFICATE.ITEM_INVALID(index));
             return null;
           }
 
@@ -137,16 +132,11 @@ const CertificateModal = ({
           formData.append("image", cert.imageFile);
 
           try {
-            const response = await api.post("/certifications", formData, {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            });
+            const response = await createCertification(formData);
 
             return response.data;
-          } catch (error) {
-            console.error(`Error creating certificate #${index + 1}:`, error);
-            message.error(`Lỗi khi tạo chứng chỉ #${index + 1}`);
+          } catch {
+            message.error(NOTIFICATION_MESSAGES.CERTIFICATE.CREATE_FAILED(index));
             return null;
           }
         });
@@ -158,15 +148,17 @@ const CertificateModal = ({
 
         if (successfulCertificates.length > 0) {
           message.success(
-            `Đã tạo ${successfulCertificates.length} chứng chỉ thành công!`
+            NOTIFICATION_MESSAGES.CERTIFICATE.CREATED_COUNT(
+              successfulCertificates.length
+            )
           );
           onSave(successfulCertificates);
         } else {
-          message.error("Không có chứng chỉ nào được tạo thành công!");
+          message.error(NOTIFICATION_MESSAGES.CERTIFICATE.NONE_CREATED);
         }
       }
-    } catch (error) {
-      console.error("Form validation error:", error);
+    } catch {
+      // Field-level validation already displays the relevant message.
     }
   };
 

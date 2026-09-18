@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Form, Input } from "antd";
 import GradientButton from "../../components/common/GradientButton";
-import LoginGoogle from "../../api/LoginGoogle";
+import LoginGoogle from "./GoogleLogin";
 import { login as loginRequest, loginWithGoogle } from "./api/authApi";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";

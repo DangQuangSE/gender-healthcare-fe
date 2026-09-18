@@ -10,8 +10,14 @@ import {
   Button,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { fetchSpecializations } from "../Specialization/specializationAPI";
+import { fetchSpecializations } from "../../../catalog/api/specializationApi";
 import dayjs from "dayjs";
+import { uploadClient } from "../../../../shared/api/client";
+import {
+  CLOUDINARY_UPLOAD_PRESET,
+  CLOUDINARY_UPLOAD_URL,
+} from "../../../../shared/config/env";
+import USER_MESSAGES from "../../../../shared/constants/userMessages";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -38,7 +44,7 @@ const CreateUserModal = ({ visible, onOk, onCancel, form, editingUser }) => {
       setSpecializations(data);
     } catch (error) {
       console.error("Error loading specializations:", error);
-      message.error("Không thể tải danh sách chuyên khoa!");
+      message.error(USER_MESSAGES.SPECIALIZATIONS_LOAD_FAILED);
     } finally {
       setLoadingSpecializations(false);
     }
@@ -76,32 +82,28 @@ const CreateUserModal = ({ visible, onOk, onCancel, form, editingUser }) => {
     try {
       setUploading(true);
 
+      if (!CLOUDINARY_UPLOAD_URL || !CLOUDINARY_UPLOAD_PRESET) {
+        throw new Error(USER_MESSAGES.IMAGE_UPLOAD_NOT_CONFIGURED);
+      }
+
       // Create FormData for file upload
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "your_upload_preset"); // Thay bằng upload preset của bạn
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
-      // Upload to Cloudinary (hoặc service khác)
-      const response = await fetch(
-        "https://api.cloudinary.com/v1_1/your_cloud_name/image/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
+      const response = await uploadClient.post("", formData);
+      const data = response.data;
 
       if (data.secure_url) {
         setImageUrl(data.secure_url);
         form.setFieldsValue({ imageUrl: data.secure_url });
-        message.success("Tải ảnh lên thành công!");
+        message.success(USER_MESSAGES.IMAGE_UPLOAD_SUCCESS);
       } else {
-        throw new Error("Upload failed");
+        throw new Error(USER_MESSAGES.IMAGE_UPLOAD_FAILED);
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      message.error("Có lỗi xảy ra khi tải ảnh lên!");
+      message.error(error.message || USER_MESSAGES.IMAGE_UPLOAD_FAILED);
     } finally {
       setUploading(false);
     }

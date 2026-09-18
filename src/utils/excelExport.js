@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 import { message } from "antd";
+import NOTIFICATION_MESSAGES from "../shared/constants/notificationMessages";
 
 /**
  * Get status text in Vietnamese
@@ -145,11 +146,11 @@ export const exportDashboardToExcel = async ({
     // Save file
     XLSX.writeFile(wb, fileName);
 
-    message.success("Xuất báo cáo Excel thành công!");
+    message.success(NOTIFICATION_MESSAGES.EXPORT.REPORT_SUCCESS);
     return true;
   } catch (error) {
     console.error("Error exporting to Excel:", error);
-    message.error("Có lỗi xảy ra khi xuất báo cáo!");
+    message.error(NOTIFICATION_MESSAGES.EXPORT.REPORT_FAILED);
     throw error;
   }
 };
@@ -183,11 +184,11 @@ export const exportAppointmentsToExcel = async (
     const fileName = `${title}_${dayjs().format("DD-MM-YYYY_HH-mm")}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
-    message.success("Xuất danh sách lịch hẹn thành công!");
+    message.success(NOTIFICATION_MESSAGES.EXPORT.APPOINTMENTS_SUCCESS);
     return true;
   } catch (error) {
     console.error("Error exporting appointments to Excel:", error);
-    message.error("Có lỗi xảy ra khi xuất danh sách!");
+    message.error(NOTIFICATION_MESSAGES.EXPORT.LIST_FAILED);
     throw error;
   }
 };
@@ -219,11 +220,11 @@ export const exportServicesToExcel = async (
     const fileName = `${title}_${dayjs().format("DD-MM-YYYY_HH-mm")}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
-    message.success("Xuất danh sách dịch vụ thành công!");
+    message.success(NOTIFICATION_MESSAGES.EXPORT.SERVICES_SUCCESS);
     return true;
   } catch (error) {
     console.error("Error exporting services to Excel:", error);
-    message.error("Có lỗi xảy ra khi xuất danh sách!");
+    message.error(NOTIFICATION_MESSAGES.EXPORT.LIST_FAILED);
     throw error;
   }
 };
@@ -271,11 +272,11 @@ export const exportUsersToExcel = async (
     const fileName = `${title}_${dayjs().format("DD-MM-YYYY_HH-mm")}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
-    message.success("Xuất danh sách người dùng thành công!");
+    message.success(NOTIFICATION_MESSAGES.EXPORT.USERS_SUCCESS);
     return true;
   } catch (error) {
     console.error("Error exporting users to Excel:", error);
-    message.error("Có lỗi xảy ra khi xuất danh sách!");
+    message.error(NOTIFICATION_MESSAGES.EXPORT.LIST_FAILED);
     throw error;
   }
 };
@@ -342,11 +343,11 @@ export const exportFinancialToExcel = async (
     const fileName = `${title}_${dayjs().format("DD-MM-YYYY_HH-mm")}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
-    message.success("Xuất báo cáo tài chính thành công!");
+    message.success(NOTIFICATION_MESSAGES.EXPORT.FINANCE_SUCCESS);
     return true;
   } catch (error) {
     console.error("Error exporting financial data to Excel:", error);
-    message.error("Có lỗi xảy ra khi xuất báo cáo!");
+    message.error(NOTIFICATION_MESSAGES.EXPORT.REPORT_FAILED);
     throw error;
   }
 };

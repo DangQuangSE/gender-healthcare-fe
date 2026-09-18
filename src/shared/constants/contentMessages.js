@@ -1,4 +1,5 @@
 export const CONTENT_MESSAGES = {
+  IMAGE_UPLOAD_NOT_CONFIGURED: "TÃ­nh nÄƒng táº£i áº£nh chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh.",
   COMMENT_REQUIRED: "Vui lòng nhập nội dung bình luận!",
   COMMENT_TOO_LONG: "Bình luận không được vượt quá 1000 ký tự!",
   LOGIN_REQUIRED: "Vui lòng đăng nhập lại!",
@@ -11,6 +12,20 @@ export const CONTENT_MESSAGES = {
   INVALID_DATA: "Dữ liệu không hợp lệ",
   FORBIDDEN: "Bạn không có quyền thực hiện thao tác này",
   COMMENT_NOT_FOUND: "Bình luận không tồn tại",
+  FEEDBACK_LOAD_FAILED: "Không thể tải danh sách đánh giá. Vui lòng thử lại!",
+  FEEDBACK_LOADING: "Đang tải đánh giá...",
+  FEEDBACK_EMPTY: "Chưa có đánh giá nào.",
+  BLOG_SUMMARY_NOT_FOUND: "Không tìm thấy thống kê blog.",
+  BLOG_SUMMARY_SERVER_ERROR: "Lỗi server khi lấy thống kê blog.",
+  BLOG_SUMMARY_LOAD_FAILED: "Không thể lấy thống kê blog. Vui lòng thử lại sau.",
+  BLOG_LOGIN_REQUIRED: "Bạn cần đăng nhập để thích bài viết",
+  BLOG_SESSION_EXPIRED: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+  BLOG_LIKE_FORBIDDEN: "Bạn không có quyền thích bài viết này.",
+  BLOG_DELETE_FORBIDDEN: "Bạn không có quyền xóa bài viết này.",
+  BLOG_NOT_FOUND: "Bài viết không tồn tại.",
+  BLOG_DELETE_NOT_FOUND: "Bài viết không tồn tại hoặc đã bị xóa.",
+  BLOG_LIKE_FAILED: "Không thể thích bài viết. Vui lòng thử lại sau.",
+  BLOG_DELETE_FAILED: "Không thể xóa bài viết. Vui lòng thử lại sau.",
 };
 
 export default CONTENT_MESSAGES;

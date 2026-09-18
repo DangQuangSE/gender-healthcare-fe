@@ -20,8 +20,13 @@ import {
 } from "@ant-design/icons";
 import { useUsers } from "./useUsers";
 import CreateUserModal from "./CreateUserModal";
-import { fetchSpecializations } from "../Specialization/specializationAPI";
-import api from "../../../../configs/api";
+import { fetchSpecializations } from "../../../catalog/api/specializationApi";
+import {
+  addUserSpecializations,
+  fetchUserSpecializations as fetchUserSpecializationList,
+  removeUserSpecialization,
+} from "../../../admin/api/userApi";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 import "./UserManagement.css";
 
 const { TabPane } = Tabs;
@@ -40,19 +45,9 @@ const SpecializationCell = ({
   const loadUserSpecializations = useCallback(async () => {
     try {
       setLoading(true);
-      console.log(" Loading specializations for user:", record.id);
-
-      const response = await api.get(
-        `/admin/user/${record.id}/specializations`
-      );
-      const userSpecializations = Array.isArray(response.data)
-        ? response.data
-        : [];
-
-      console.log("Loaded specializations:", userSpecializations);
+      const userSpecializations = await fetchUserSpecializationList(record.id);
       setSpecializations(userSpecializations);
-    } catch (error) {
-      console.warn("⚠️ Could not load specializations:", error);
+    } catch {
       setSpecializations([]);
     } finally {
       setLoading(false);
@@ -131,18 +126,11 @@ const UserManagement = ({ form }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Lấy danh sách chuyên khoa hiện tại của user
-  const fetchUserSpecializations = async (userId) => {
+  const getUserSpecializationIds = async (userId) => {
     try {
-      console.log(" Fetching current specializations for user:", userId);
-      const response = await api.get(`/admin/user/${userId}/specializations`);
-      console.log("Current specializations response:", response.data);
-
-      // Xử lý response data
-      const specializations = Array.isArray(response.data) ? response.data : [];
+      const specializations = await fetchUserSpecializationList(userId);
       return specializations.map((spec) => spec.id);
-    } catch (error) {
-      console.warn("⚠️ Could not fetch current specializations:", error);
-      console.warn("Error details:", error.response?.data);
+    } catch {
       return [];
     }
   };
@@ -156,7 +144,7 @@ const UserManagement = ({ form }) => {
       // Load danh sách chuyên khoa có sẵn và chuyên khoa hiện tại của user
       const [specializations, currentSpecializationIds] = await Promise.all([
         fetchSpecializations(),
-        fetchUserSpecializations(user.id),
+        getUserSpecializationIds(user.id),
       ]);
 
       setAvailableSpecializations(specializations);
@@ -164,7 +152,9 @@ const UserManagement = ({ form }) => {
       setIsSpecializationModalVisible(true);
     } catch (error) {
       console.error(" Error loading specializations:", error);
-      message.error("Không thể tải danh sách chuyên khoa!");
+      message.error(
+        NOTIFICATION_MESSAGES.USER_MANAGEMENT.SPECIALIZATIONS_LOAD_FAILED
+      );
     } finally {
       setLoadingSpecializations(false);
     }
@@ -173,14 +163,10 @@ const UserManagement = ({ form }) => {
   // Lưu chuyên khoa cho tư vấn viên
   const handleSaveSpecializations = async () => {
     try {
-      console.log(" Updating specializations for user:", selectedUser.id);
-      console.log("Selected specializations:", selectedSpecializations);
-
       // Lấy danh sách chuyên khoa hiện tại
-      const currentSpecializationIds = await fetchUserSpecializations(
+      const currentSpecializationIds = await getUserSpecializationIds(
         selectedUser.id
       );
-      console.log("Current specializations:", currentSpecializationIds);
 
       // Tìm chuyên khoa cần thêm (có trong selected nhưng không có trong current)
       const toAdd = selectedSpecializations.filter(
@@ -192,26 +178,19 @@ const UserManagement = ({ form }) => {
         (id) => !selectedSpecializations.includes(id)
       );
 
-      console.log("Specializations to add:", toAdd);
-      console.log("Specializations to remove:", toRemove);
-
       // Thêm chuyên khoa mới
       if (toAdd.length > 0) {
-        await api.post(`/admin/user/${selectedUser.id}/specializations`, {
-          specializationIds: toAdd,
-        });
-        console.log("Added specializations:", toAdd);
+        await addUserSpecializations(selectedUser.id, toAdd);
       }
 
       // Xóa chuyên khoa không còn được chọn
       for (const specId of toRemove) {
-        await api.delete(
-          `/admin/user/${selectedUser.id}/specializations/${specId}`
-        );
-        console.log("Removed specialization:", specId);
+        await removeUserSpecialization(selectedUser.id, specId);
       }
 
-      message.success("Cập nhật chuyên khoa thành công!");
+      message.success(
+        NOTIFICATION_MESSAGES.USER_MANAGEMENT.SPECIALIZATIONS_UPDATE_SUCCESS
+      );
 
       // Đóng modal và refresh data
       setIsSpecializationModalVisible(false);
@@ -231,7 +210,7 @@ const UserManagement = ({ form }) => {
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        "Có lỗi xảy ra khi cập nhật chuyên khoa!";
+        NOTIFICATION_MESSAGES.USER_MANAGEMENT.SPECIALIZATIONS_UPDATE_FAILED;
       message.error(errorMessage);
     }
   };

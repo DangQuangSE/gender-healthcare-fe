@@ -1,24 +1,25 @@
-import api from "../../../shared/api/client";
+import apiClient from "../../../shared/api/client";
 
-export const login = (credentials) => api.post("/auth/login", credentials);
+export const login = (credentials) =>
+  apiClient.post("/v1/auth/login", credentials);
 
 export const loginWithGoogle = (accessToken) =>
-  api.post("/auth/google", { accessToken });
+  apiClient.post("/v1/auth/oauth/google", { accessToken });
 
 export const requestRegistrationOtp = (email) =>
-  api.post("/auth/request-OTP", { email });
+  apiClient.post("/v1/auth/registration/otp", { email });
 
 export const verifyRegistrationOtp = (email, otp) =>
-  api.post("/auth/verify-Otp", { email, otp });
+  apiClient.post("/v1/auth/registration/verify-otp", { email, otp });
 
 export const configurePassword = (payload) =>
-  api.post("/auth/config-password", payload);
+  apiClient.post("/v1/auth/registration/password", payload);
 
 export const requestForgotPasswordOtp = (email) =>
-  api.post("/auth/forgot-password/request-otp", { email });
+  apiClient.post("/v1/auth/forgot-password/otp", { email });
 
 export const verifyForgotPasswordOtp = (email, otp) =>
-  api.post("/auth/forgot-password/verify-otp", { email, otp });
+  apiClient.post("/v1/auth/forgot-password/verify-otp", { email, otp });
 
 export const resetPassword = (payload) =>
-  api.post("/auth/forgot-password/resetPass", payload);
+  apiClient.put("/v1/auth/forgot-password/password", payload);

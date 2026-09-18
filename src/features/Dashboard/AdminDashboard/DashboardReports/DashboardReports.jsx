@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Card,
   Row,
@@ -25,8 +25,9 @@ import {
   DownloadOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import api from "../../../../configs/api";
+import { fetchDashboardData } from "../../../admin/api/reportApi";
 import { exportDashboardToExcel } from "../../../../utils/excelExport";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 import "./DashboardReports.css";
 
 const { RangePicker } = DatePicker;
@@ -76,16 +77,13 @@ const DashboardReports = () => {
     }
   };
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      console.log(" [DASHBOARD] Loading dashboard reports data...");
-
+      if (!dateRange?.[0] || !dateRange?.[1]) return;
       // Format date range for API calls
       const startDate = dateRange[0].format("YYYY-MM-DD");
       const endDate = dateRange[1].format("YYYY-MM-DD");
-
-      console.log(" [DASHBOARD] Date range:", { startDate, endDate });
 
       // Call actual APIs
       const [
@@ -93,60 +91,24 @@ const DashboardReports = () => {
         revenueTodayRes,
         revenueMonthRes,
         bookingSummaryRes,
-        bookingStatsRes,
         usersRes,
+        consultantsRes,
+        staffRes,
         pendingAppointmentsRes,
         confirmedAppointmentsRes,
         checkedAppointmentsRes,
         completedAppointmentsRes,
         servicesRes,
-      ] = await Promise.allSettled([
-        api.get("/financial-reports/revenue-year"),
-        api.get("/financial-reports/revenue-today"),
-        api.get("/financial-reports/revenue-month"),
-        api.get("/booking-reports/summary", {
-          params: {
-            start_date: startDate,
-            end_date: endDate,
-          },
-        }),
-        api.get("/booking-reports/stats", {
-          params: {
-            start_date: startDate,
-            end_date: endDate,
-          },
-        }),
-        api.get("/admin/users?role=CUSTOMER"), // Get customer count
-        api.get("/appointment/by-status", {
-          params: {
-            status: "PENDING",
-          },
-        }),
-        api.get("/appointment/by-status", {
-          params: {
-            status: "CONFIRMED",
-          },
-        }),
-        api.get("/appointment/by-status", {
-          params: {
-            status: "CHECKED",
-          },
-        }),
-        api.get("/appointment/by-status", {
-          params: {
-            status: "COMPLETED",
-          },
-        }),
-        api.get("/services"), // Get all services
-      ]);
+      ] = await fetchDashboardData({ startDate, endDate });
 
       console.log(" [DASHBOARD] API Responses:", {
         revenueYear: revenueYearRes,
         revenueToday: revenueTodayRes,
         revenueMonth: revenueMonthRes,
         bookingSummary: bookingSummaryRes,
-        bookingStats: bookingStatsRes,
         users: usersRes,
+        consultants: consultantsRes,
+        staff: staffRes,
         pendingAppointments: pendingAppointmentsRes,
         confirmedAppointments: confirmedAppointmentsRes,
         checkedAppointments: checkedAppointmentsRes,
@@ -162,15 +124,9 @@ const DashboardReports = () => {
       const monthRevenue =
         revenueMonthRes.status === "fulfilled" ? revenueMonthRes.value.data : 0;
 
-      // Process booking data
-      const bookingSummary =
-        bookingSummaryRes.status === "fulfilled" &&
-        bookingSummaryRes.value?.data
-          ? bookingSummaryRes.value.data
-          : {};
       const bookingStats =
-        bookingStatsRes.status === "fulfilled" && bookingStatsRes.value?.data
-          ? bookingStatsRes.value.data
+        bookingSummaryRes.status === "fulfilled" && bookingSummaryRes.value?.data
+          ? bookingSummaryRes.value.data
           : {};
 
       // Log API errors for debugging
@@ -207,19 +163,21 @@ const DashboardReports = () => {
       }
       if (appointmentErrors.length > 0) {
         message.warning(
-          `Không thể tải dữ liệu lịch hẹn cho trạng thái: ${appointmentErrors.join(
-            ", "
-          )}`
+          NOTIFICATION_MESSAGES.DASHBOARD.APPOINTMENT_PARTIAL_LOAD_FAILED(
+            appointmentErrors
+          )
         );
       }
 
       // Process user data
-      const customerCount =
-        usersRes.status === "fulfilled"
-          ? Array.isArray(usersRes.value.data)
-            ? usersRes.value.data.length
-            : 0
+      const getUserCount = (result) =>
+        result.status === "fulfilled" && Array.isArray(result.value?.data)
+          ? result.value.data.length
           : 0;
+
+      const customerCount = getUserCount(usersRes);
+      const consultantCount = getUserCount(consultantsRes);
+      const staffCount = getUserCount(staffRes);
 
       // Process appointments data from all status APIs
       const pendingAppointments =
@@ -262,8 +220,6 @@ const DashboardReports = () => {
         ...completedAppointments,
       ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      console.log(" [DASHBOARD] Combined appointments data:", appointmentsData);
-
       // Process services data
       const servicesData =
         servicesRes.status === "fulfilled" && servicesRes.value?.data
@@ -275,13 +231,13 @@ const DashboardReports = () => {
       console.log("🔧 [DASHBOARD] Services data:", servicesData);
 
       // Calculate completion rate from booking stats
-      const totalBookings = bookingStats.totalBookings || 0;
-      const completedBookings = bookingStats.completedBookings || 0;
+      const totalBookings = appointmentsData.length;
+      const completedBookings = completedAppointments.length;
       const completionRate =
         totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
 
       const processedData = {
-        totalUsers: customerCount,
+        totalUsers: customerCount + consultantCount + staffCount,
         totalAppointments: appointmentsData.length, // Count of all appointments from API
         totalRevenue: yearRevenue,
         todayRevenue: todayRevenue,
@@ -292,17 +248,13 @@ const DashboardReports = () => {
         topServices: servicesData.slice(0, 5), // Show top 5 services
         userStats: {
           customers: customerCount,
-          consultants: 25, // Will need separate API
-          staff: 15, // Will need separate API
+          consultants: consultantCount,
+          staff: staffCount,
         },
         bookingStats: bookingStats,
       };
 
       setDashboardData(processedData);
-      console.log(
-        " [DASHBOARD] Dashboard data loaded successfully:",
-        processedData
-      );
     } catch (error) {
       console.error(" [DASHBOARD] Error loading dashboard data:", error);
 
@@ -315,6 +267,7 @@ const DashboardReports = () => {
         monthRevenue: 0,
         completionRate: 0,
         recentAppointments: [],
+        allAppointments: [],
         topServices: [],
         userStats: {
           customers: 0,
@@ -326,11 +279,11 @@ const DashboardReports = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
 
   useEffect(() => {
     loadDashboardData();
-  }, [dateRange, reportType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadDashboardData]);
 
   // Filter appointments based on status
   const getFilteredAppointments = () => {

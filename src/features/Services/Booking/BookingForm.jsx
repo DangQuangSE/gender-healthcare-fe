@@ -23,19 +23,19 @@ import locale from "antd/es/date-picker/locale/vi_VN";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import "./BookingForm.css";
 import GradientButton from "../../../components/common/GradientButton";
-import api from "../../../configs/api";
+import {
+  getConsultants,
+  getServiceSchedule,
+} from "../../catalog/catalogApi";
 import bookingStorage from "../../../shared/storage/bookingStorage";
 import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
+import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
+import { BOOKING_FORM_TAB_LABELS } from "./BookingForm.constants";
 dayjs.extend(isSameOrBefore);
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { TextArea } = Input;
-
-const TAB_LABELS = {
-  morning: "Buổi sáng",
-  afternoon: "Buổi chiều",
-};
 
 const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   const [searchParams] = useSearchParams();
@@ -60,20 +60,14 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
       const from = dateRange[0].format("YYYY-MM-DD");
       const to = dateRange[1].format("YYYY-MM-DD");
 
-      console.log(" Fetching schedule data for service:", defaultServiceId);
-      api
-        .get("/schedules/slot-free-service", {
-          params: { service_id: defaultServiceId, from, to },
-        })
+      getServiceSchedule(defaultServiceId, from, to)
         .then((res) => {
           const parsed =
             typeof res.data === "string" ? JSON.parse(res.data) : res.data;
-          console.log(" Schedule data updated:", parsed);
           setServiceDetail(parsed.serviceDTO);
           setScheduleData(parsed.scheduleResponses || []);
         })
-        .catch((err) => {
-          console.error(" Lỗi khi gọi slot-free-service:", err);
+        .catch(() => {
           setScheduleData([]);
         });
     }
@@ -93,7 +87,6 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
         shouldRefresh === "true" &&
         lastBookedServiceId === defaultServiceId
       ) {
-        console.log(" Refreshing schedule data after booking...");
         fetchScheduleData();
 
         // Clear the trigger
@@ -117,10 +110,8 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
 
   // Fetch consultants list
   useEffect(() => {
-    api
-      .get("/admin/users?role=CONSULTANT")
+    getConsultants()
       .then((res) => {
-        console.log("Danh sách bác sĩ:", res.data);
         setConsultants(res.data || []);
 
         // Kiểm tra xem có bác sĩ đã được chọn từ ServiceDetail không
@@ -129,14 +120,10 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
         );
         if (selectedConsultantId) {
           setSelectedConsultantId(Number(selectedConsultantId));
-          console.log(
-            "Đã tự động chọn bác sĩ từ ServiceDetail:",
-            selectedConsultantId
-          );
         }
       })
-      .catch((err) => {
-        console.error("Lỗi khi lấy danh sách bác sĩ:", err);
+      .catch(() => {
+        setConsultants([]);
       });
   }, []);
 
@@ -149,10 +136,6 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
       if (selectedConsultantId) {
         setSelectedConsultantId(Number(selectedConsultantId));
         setConsultantUpdateTrigger((prev) => prev + 1); // Force re-render
-        console.log(
-          "BookingForm updated with selected consultant:",
-          selectedConsultantId
-        );
       }
     };
 
@@ -214,7 +197,7 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
 
   const handleBooking = () => {
     if (!defaultServiceId || !selectedDay || !selectedTime || !selectedSlotId) {
-      message.warning("Vui lòng chọn đủ thông tin!");
+      message.warning(NOTIFICATION_MESSAGES.BOOKING_FORM.REQUIRED_SELECTION);
       return;
     }
 
@@ -309,7 +292,7 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
               const today = dayjs().startOf("day");
               const max = today.add(30, "day");
               if (!date || date.isBefore(today) || date.isAfter(max)) {
-                message.warning("Chỉ được chọn trong 1 tháng!");
+                message.warning(NOTIFICATION_MESSAGES.BOOKING_FORM.ONE_MONTH_ONLY);
                 return;
               }
               setDateRange([date.startOf("day"), date.add(30, "day")]);
@@ -365,7 +348,10 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
                 // else parts.evening.push(slot);
               });
               return Object.entries(parts).map(([key, list]) => (
-                <TabPane tab={TAB_LABELS[key] || key} key={key}>
+                <TabPane
+                  tab={BOOKING_FORM_TAB_LABELS[key] || key}
+                  key={key}
+                >
                   <div className="time-slots-grid">
                     {list.map((slot) => (
                       <Button

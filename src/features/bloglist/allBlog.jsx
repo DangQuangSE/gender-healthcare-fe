@@ -6,12 +6,17 @@ import { Select, Input } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import "./allBlog.css";
 import Breadcrumb from "../../components/Breadcrumb/Breadcrumb";
-import api from "../../shared/api/client";
-import { fetchBlogsByMultipleTags } from "../../api/tagAPI";
+import { unwrapApiResponse } from "../../shared/api/response";
+import { fetchBlogs as fetchAllBlogs } from "../blog/api/blogApi";
+import {
+  fetchBlogsByMultipleTags,
+  fetchBlogsByTag,
+  fetchTags,
+} from "../blog/api/tagApi";
 
 const { Search } = Input;
 
-const getResponseData = (response) => response?.data?.data || response?.data;
+const getResponseData = (response) => unwrapApiResponse(response?.data);
 
 const getBlogsFromResponse = (response) => {
   const data = getResponseData(response);
@@ -31,7 +36,7 @@ const AllBlog = () => {
   useEffect(() => {
     const loadTags = async () => {
       try {
-        const response = await api.get("/tags");
+        const response = await fetchTags();
         const data = getResponseData(response);
         setTags(Array.isArray(data) ? data : []);
       } catch {
@@ -44,15 +49,13 @@ const AllBlog = () => {
 
   // Lấy blog theo tag hoặc tất cả
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const loadBlogs = async () => {
       setLoading(true);
       try {
         let blogs = [];
         if (selectedTags.length === 0) {
           // Không có tag nào được chọn - lấy tất cả blog
-          const response = await api.get("/blog", {
-            params: { page: 0, size: 50 },
-          });
+          const response = await fetchAllBlogs(0, 50);
           blogs = getBlogsFromResponse(response).filter(
             (blog) => blog.status === "PUBLISHED"
           );
@@ -68,14 +71,10 @@ const AllBlog = () => {
             blogs = (data?.content || data || []).filter(
               (blog) => blog.status === "PUBLISHED"
             );
-          } catch (error) {
-            console.error("Error fetching blogs by multiple tags:", error);
+    } catch {
             // Fallback: nếu API multiple tags không hoạt động, dùng API single tag cho tag đầu tiên
             if (selectedTags.length > 0) {
-              const response = await api.get(
-                `/blog/by-tag/${selectedTags[0]}`,
-                { params: { page: 0, size: 50 } }
-              );
+              const response = await fetchBlogsByTag(selectedTags[0], 0, 50);
               blogs = getBlogsFromResponse(response).filter(
                 (blog) => blog.status === "PUBLISHED"
               );
@@ -92,14 +91,14 @@ const AllBlog = () => {
             blog.tags.some((tag) => tag.id === 2 || tag.name === "tin dịch vụ")
         );
         setServiceArticles(serviceBlogs);
-      } catch (error) {
+      } catch {
         setAllBlogs([]);
         setFilteredBlogs([]);
         setServiceArticles([]);
       }
       setLoading(false);
     };
-    fetchBlogs();
+    loadBlogs();
   }, [selectedTags]);
 
   // Filter blogs by search text

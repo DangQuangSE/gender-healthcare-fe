@@ -171,3 +171,28 @@
 .booking-dashboard__table .ant-table-body::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+.staff-booking-detail__medical-profile,
+.staff-booking-detail__appointment {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.staff-booking-detail__medical-profile {
+  background: #f0f8ff;
+  border: 1px solid #d1ecf1;
+}
+
+.staff-booking-detail__appointment {
+  background: #f5f5f5;
+}
+
+.staff-booking-detail__muted {
+  color: #666;
+  font-style: italic;
+}
+
+.staff-booking-detail__indented {
+  margin-left: 16px;
+}

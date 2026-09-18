@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Result, Button, Spin, message } from "antd";
-import api from "../../../configs/api";
+import {
+  createOfflinePayment,
+  createVNPayPayment,
+} from "../../payments/paymentApi";
 import bookingStorage from "../../../shared/storage/bookingStorage";
 import { PAYMENT_MESSAGES } from "../../../shared/constants/paymentMessages";
 
@@ -11,7 +14,7 @@ const Payment = () => {
   const [loading, setLoading] = useState(true);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  const booking = bookingStorage.getPendingBooking();
+  const booking = useMemo(() => bookingStorage.getPendingBooking(), []);
 
   // Check VNPay return parameters
   useEffect(() => {
@@ -40,7 +43,7 @@ const Payment = () => {
       }
       return; // Không chạy createPayment nếu đã có VNPay response
     }
-  }, [location.search, navigate, booking]);
+  }, [location.search, navigate]);
 
   useEffect(() => {
     // Chỉ tạo payment nếu không có VNPay response trong URL
@@ -53,7 +56,6 @@ const Payment = () => {
 
     const createPayment = async () => {
       if (!booking || !booking.amount || !booking.serviceName) {
-        // message.error("Thiếu thông tin thanh toán hoặc lịch hẹn.");
         setLoading(false);
         return;
       }
@@ -61,13 +63,7 @@ const Payment = () => {
       // Xử lý thanh toán trực tiếp - gọi create-off giống hệt VNPay
       if (booking.isDirectPayment) {
         try {
-          const res = await api.get("/payment/vnpay/create-off", {
-            params: {
-              appointmentId: booking.appointmentId,
-              amount: booking.amount,
-              serviceName: booking.serviceName,
-            },
-          });
+          const res = await createOfflinePayment(booking.appointmentId);
 
           // Kiểm tra responseCode để xử lý kết quả tạo payment giống VNPay
           if (res.data.responseCode === 0 && res.data.url) {
@@ -115,19 +111,12 @@ const Payment = () => {
 
       // Xử lý VNPay (logic cũ)
       if (!booking.appointmentId || !booking.paymentMethod) {
-        // message.error("Thiếu thông tin thanh toán hoặc lịch hẹn.");
         setLoading(false);
         return;
       }
 
       try {
-        const res = await api.get("/payment/vnpay/create", {
-          params: {
-            appointmentId: booking.appointmentId,
-            amount: booking.amount,
-            serviceName: booking.serviceName,
-          },
-        });
+        const res = await createVNPayPayment(booking.appointmentId);
 
         // Kiểm tra responseCode để xử lý kết quả tạo payment
         if (res.data.responseCode === 0 && res.data.url) {

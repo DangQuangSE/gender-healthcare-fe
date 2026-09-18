@@ -1,15 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { notification, Button } from "antd";
 import { StarOutlined } from "@ant-design/icons";
-import api from "../../configs/api";
 import authStorage from "../../shared/storage/authStorage";
+import { getAppointmentsByStatus } from "../../features/appointments/appointmentApi";
 import RatingModal from "../RatingModal/RatingModal";
 import "./RatingNotification.css";
 
 const RatingNotification = () => {
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [appointmentToRate, setAppointmentToRate] = useState(null);
-  const [loading, setLoading] = useState(false);
   const hasShownRatingNotification = useRef(false);
   const [notificationApi, contextHolder] = notification.useNotification();
 
@@ -24,7 +23,7 @@ const RatingNotification = () => {
   };
 
   // Hàm mở modal đánh giá
-  const openRatingModal = (appointment) => {
+  const openRatingModal = useCallback((appointment) => {
     // Đảm bảo appointment có đủ thông tin cần thiết
     const enhancedAppointment = {
       ...appointment,
@@ -37,17 +36,14 @@ const RatingNotification = () => {
     setTimeout(() => {
       setRatingModalVisible(true);
     }, 50);
-  };
+  }, []);
 
   // Fetch unrated completed appointments
-  const fetchUnratedAppointments = async () => {
+  const fetchUnratedAppointments = useCallback(async () => {
     if (hasShownRatingNotification.current) return;
 
-    try {
-      setLoading(true);
-
-      // Sử dụng endpoint by-status thay vì /unrated
-      const response = await api.get("/appointment/by-status?status=COMPLETED");
+    // Sử dụng endpoint by-status thay vì /unrated
+      const response = await getAppointmentsByStatus("COMPLETED");
 
       // Lọc các cuộc hẹn đã hoàn thành nhưng chưa đánh giá
       const unratedAppointments = response.data.filter(
@@ -157,10 +153,7 @@ const RatingNotification = () => {
 
       //   hasShownRatingNotification.current = true;
       // }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [notificationApi, openRatingModal]);
 
   useEffect(() => {
     // Chỉ fetch khi người dùng đã đăng nhập
@@ -172,7 +165,7 @@ const RatingNotification = () => {
         fetchUnratedAppointments();
       }, 3000); // 3 giây
     }
-  }, []);
+  }, [fetchUnratedAppointments]);
 
   return (
     <>

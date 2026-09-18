@@ -1,56 +1,48 @@
 import { toast } from "react-toastify";
-
-// Global toast configuration
-const toastConfig = {
-  position: "bottom-center",
-  autoClose: 2500,
-  hideProgressBar: false,
-  closeOnClick: true,
-  pauseOnHover: true,
-  draggable: true,
-  newestOnTop: false,
-  rtl: false,
-};
+import {
+  DEFAULT_TOAST_CONFIG,
+  TOAST_MESSAGES,
+} from "./toast.constants";
 
 // Toast utility functions
 export const showToast = {
   success: (message, customConfig = {}) =>
-    toast.success(message, { ...toastConfig, ...customConfig }),
+    toast.success(message, { ...DEFAULT_TOAST_CONFIG, ...customConfig }),
 
   error: (message, customConfig = {}) =>
     toast.error(message, {
-      ...toastConfig,
+      ...DEFAULT_TOAST_CONFIG,
       autoClose: 3000, // Error toast hiển thị lâu hơn
       ...customConfig,
     }),
 
   info: (message, customConfig = {}) =>
-    toast.info(message, { ...toastConfig, ...customConfig }),
+    toast.info(message, { ...DEFAULT_TOAST_CONFIG, ...customConfig }),
 
   warning: (message, customConfig = {}) =>
-    toast.warning(message, { ...toastConfig, ...customConfig }),
+    toast.warning(message, { ...DEFAULT_TOAST_CONFIG, ...customConfig }),
 
   // Custom toast với icon
   successWithIcon: (message, icon = "✓") =>
-    toast.success(`${icon} ${message}`, toastConfig),
+    toast.success(`${icon} ${message}`, DEFAULT_TOAST_CONFIG),
 
   errorWithIcon: (message, icon = "✗") =>
     toast.error(`${icon} ${message}`, {
-      ...toastConfig,
+      ...DEFAULT_TOAST_CONFIG,
       autoClose: 3000,
     }),
 
   // Toast cho các action cụ thể
   loading: (message) =>
     toast.loading(message, {
-      ...toastConfig,
+      ...DEFAULT_TOAST_CONFIG,
       autoClose: false, // Loading toast không tự đóng
     }),
 
   // Update loading toast
   updateLoading: (toastId, message, type = "success") => {
     const config = {
-      ...toastConfig,
+      ...DEFAULT_TOAST_CONFIG,
       autoClose: type === "error" ? 3000 : 2500,
     };
 
@@ -79,49 +71,9 @@ export const showToast = {
 };
 
 // Export default config for manual usage
-export const defaultToastConfig = toastConfig;
+export const defaultToastConfig = DEFAULT_TOAST_CONFIG;
 
 // Preset messages for common actions
-export const toastMessages = {
-  // Success messages
-  success: {
-    save: "Lưu thành công!",
-    update: "Cập nhật thành công!",
-    delete: "Xóa thành công!",
-    create: "Tạo mới thành công!",
-    login: "Đăng nhập thành công!",
-    logout: "Đăng xuất thành công!",
-    upload: "Tải lên thành công!",
-    download: "Tải xuống thành công!",
-  },
-
-  // Error messages
-  error: {
-    save: "Lỗi khi lưu dữ liệu!",
-    update: "Lỗi khi cập nhật!",
-    delete: "Lỗi khi xóa!",
-    create: "Lỗi khi tạo mới!",
-    login: "Đăng nhập thất bại!",
-    network: "Lỗi kết nối mạng!",
-    permission: "Bạn không có quyền thực hiện hành động này!",
-    validation: "Dữ liệu không hợp lệ!",
-    upload: "Lỗi khi tải lên!",
-    download: "Lỗi khi tải xuống!",
-  },
-
-  // Info messages
-  info: {
-    loading: "Đang tải dữ liệu...",
-    processing: "Đang xử lý...",
-    waiting: "Vui lòng đợi...",
-  },
-
-  // Warning messages
-  warning: {
-    unsaved: "Bạn có thay đổi chưa được lưu!",
-    confirm: "Bạn có chắc chắn muốn thực hiện hành động này?",
-    limit: "Bạn đã đạt giới hạn cho phép!",
-  },
-};
+export const toastMessages = TOAST_MESSAGES;
 
 export default showToast;

@@ -131,10 +131,6 @@ function Staff() {
     },
   ];
 
-  const handleCreateQA = () => {
-    setIsQAModalVisible(true);
-  };
-
   const handleAppointmentModalOk = () => {
     form.validateFields().then((values) => {
       console.log("Form values:", values);

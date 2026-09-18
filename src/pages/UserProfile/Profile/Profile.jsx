@@ -28,8 +28,15 @@ import {
   MoreOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
+import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
 import dayjs from "dayjs";
-import api from "../../../configs/api";
+import {
+  deleteCertification,
+  getCurrentUser,
+  getMyCertifications,
+  updateAvatar,
+  updateProfile,
+} from "../../../features/profile/profileApi";
 import { useDispatch } from "react-redux";
 import { updateUserAvatar } from "../../../redux/reduxStore/userSlice";
 import "./Profile.css";
@@ -60,8 +67,7 @@ const Profile = () => {
     const fetchUserData = async () => {
       try {
         setFetchingUser(true);
-        const response = await api.get("/me");
-        console.log("User data from /api/me:", response.data);
+        const response = await getCurrentUser();
         setUser(response.data);
         setImageUrl(response.data.imageUrl || "");
 
@@ -80,9 +86,8 @@ const Profile = () => {
         if (response.data.certificates) {
           setCertificates(response.data.certificates);
         }
-      } catch (error) {
-        console.error(" Error fetching user data:", error);
-        message.error("Không thể lấy thông tin người dùng");
+      } catch {
+        message.error(NOTIFICATION_MESSAGES.PROFILE.LOAD_FAILED);
       } finally {
         setFetchingUser(false);
       }
@@ -97,15 +102,7 @@ const Profile = () => {
       setUploading(true);
 
       // Create FormData for file upload
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Upload to server using PUT instead of POST
-      const response = await api.put("/me/avatar", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await updateAvatar(file);
 
       if (response.data && response.data.imageUrl) {
         setImageUrl(response.data.imageUrl);
@@ -119,13 +116,12 @@ const Profile = () => {
         // Cập nhật Redux store để các component khác cũng nhận được ảnh mới
         dispatch(updateUserAvatar({ imageUrl: response.data.imageUrl }));
 
-        message.success("Tải ảnh lên thành công!");
+      message.success(NOTIFICATION_MESSAGES.PROFILE.IMAGE_UPLOAD_SUCCESS);
       } else {
         throw new Error("Upload failed");
       }
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      message.error("Có lỗi xảy ra khi tải ảnh lên!");
+    } catch {
+      message.error(NOTIFICATION_MESSAGES.PROFILE.IMAGE_UPLOAD_FAILED);
     } finally {
       setUploading(false);
     }
@@ -152,20 +148,16 @@ const Profile = () => {
           : null,
       };
 
-      console.log("Updating profile with:", updateData);
+      await updateProfile(updateData);
 
-      const response = await api.put("/me/profile", updateData);
-      console.log("Update response:", response.data);
-
-      message.success("Cập nhật hồ sơ thành công!");
+      message.success(NOTIFICATION_MESSAGES.PROFILE.UPDATE_SUCCESS);
       setEditing(false);
 
       // Refresh user data after successful update
-      const updatedResponse = await api.get("/me");
+      const updatedResponse = await getCurrentUser();
       setUser(updatedResponse.data);
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      message.error("Cập nhật hồ sơ thất bại!");
+    } catch {
+      message.error(NOTIFICATION_MESSAGES.PROFILE.UPDATE_FAILED);
     } finally {
       setLoading(false);
     }
@@ -177,12 +169,12 @@ const Profile = () => {
     setCertificateModalVisible(true);
   };
 
-  const handleSaveCertificates = async (certificateData) => {
+  const handleSaveCertificates = async () => {
     try {
       setCertificateLoading(true);
 
       // Sau khi lưu thành công, tải lại danh sách chứng chỉ từ server
-      const response = await api.get("/certifications/my-certifications");
+      const response = await getMyCertifications();
       if (response.data) {
         setCertificates(
           Array.isArray(response.data) ? response.data : [response.data]
@@ -190,10 +182,9 @@ const Profile = () => {
       }
 
       setCertificateModalVisible(false);
-      message.success("Cập nhật chứng chỉ thành công!");
-    } catch (error) {
-      console.error("Error updating certificates:", error);
-      message.error("Cập nhật chứng chỉ thất bại!");
+      message.success(NOTIFICATION_MESSAGES.PROFILE.CERTIFICATE_UPDATE_SUCCESS);
+    } catch {
+      message.error(NOTIFICATION_MESSAGES.PROFILE.CERTIFICATE_UPDATE_FAILED);
     } finally {
       setCertificateLoading(false);
     }
@@ -209,16 +200,14 @@ const Profile = () => {
 
       try {
         // Sử dụng endpoint /my-certifications để lấy chứng chỉ của người dùng hiện tại
-        const response = await api.get("/certifications/my-certifications");
+        const response = await getMyCertifications();
         if (response.data) {
           setCertificates(
             Array.isArray(response.data) ? response.data : [response.data]
           );
-          console.log("Fetched certificates:", response.data);
         }
-      } catch (error) {
-        console.error("Error fetching certificates:", error);
-        message.error("Không thể tải danh sách chứng chỉ");
+      } catch {
+        message.error(NOTIFICATION_MESSAGES.PROFILE.CERTIFICATE_LOAD_FAILED);
       }
     };
 
@@ -228,16 +217,15 @@ const Profile = () => {
   // Hàm xóa chứng chỉ
   const handleDeleteCertificate = async (certificateId) => {
     try {
-      await api.delete(`/certifications/${certificateId}`);
-      message.success("Xóa chứng chỉ thành công!");
+      await deleteCertification(certificateId);
+      message.success(NOTIFICATION_MESSAGES.PROFILE.CERTIFICATE_DELETE_SUCCESS);
 
       // Cập nhật danh sách chứng chỉ
       setCertificates((prevCertificates) =>
         prevCertificates.filter((cert) => cert.id !== certificateId)
       );
-    } catch (error) {
-      console.error("Error deleting certificate:", error);
-      message.error("Xóa chứng chỉ thất bại!");
+    } catch {
+      message.error(NOTIFICATION_MESSAGES.PROFILE.CERTIFICATE_DELETE_FAILED);
     }
   };
 

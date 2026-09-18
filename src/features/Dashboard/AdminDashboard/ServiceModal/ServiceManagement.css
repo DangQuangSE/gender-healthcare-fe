@@ -1,0 +1,21 @@
+.service-management__search {
+  width: 250px;
+}
+
+.service-management__combo-button {
+  background-color: #52c41a;
+  border-color: #52c41a;
+  color: #fff;
+}
+
+.service-management__search-summary {
+  margin-bottom: 16px;
+}
+
+.service-management__specialization-tag {
+  margin-bottom: 4px;
+}
+
+.service-management__empty-value {
+  color: #999;
+}

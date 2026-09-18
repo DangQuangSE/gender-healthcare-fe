@@ -20,8 +20,9 @@ import { toast } from "react-toastify";
 import {
   getConsultantSchedules,
   cancelSchedule,
-} from "../../../../api/consultantAPI";
+} from "../../../scheduling/scheduleApi";
 import dayjs from "dayjs";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const { Panel } = Collapse;
 
@@ -52,7 +53,7 @@ const ScheduleByDate = ({ userId, onEditSchedule }) => {
       }
     } catch (error) {
       console.error("Error loading schedule data:", error);
-      toast.error("Không thể tải dữ liệu lịch làm việc");
+      toast.error(NOTIFICATION_MESSAGES.SCHEDULE.LOAD_FAILED);
       setScheduleData([]);
     } finally {
       setLoading(false);
@@ -71,11 +72,11 @@ const ScheduleByDate = ({ userId, onEditSchedule }) => {
       };
 
       await cancelSchedule(scheduleData);
-      toast.success("Hủy ca làm việc thành công!");
+      toast.success(NOTIFICATION_MESSAGES.SCHEDULE.CANCEL_SUCCESS);
       loadScheduleData(); // Reload data
     } catch (error) {
       console.error("Error canceling schedule:", error);
-      toast.error("Hủy ca làm việc thất bại!");
+      toast.error(NOTIFICATION_MESSAGES.SCHEDULE.CANCEL_FAILED);
     }
   };
 

@@ -11,22 +11,16 @@ import {
   Input,
 } from "antd";
 import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import api from "../../../../configs/api";
+import { getAppointmentsByStatus } from "../../../appointments/appointmentApi";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import {
+  APPOINTMENT_STATUS_KEYS,
+  APPOINTMENT_STATUSES,
+} from "./BookingDashboard.constants";
 import "./BookingDashboard.css";
 
 const { TabPane } = Tabs;
 const { Search } = Input;
-
-// Định nghĩa tất cả status
-const APPOINTMENT_STATUSES = [
-  { key: "ALL", label: "Tất cả", color: "default" },
-  { key: "PENDING", label: "Chờ xác nhận", color: "orange" },
-  { key: "CONFIRMED", label: "Đã xác nhận", color: "blue" },
-  { key: "CHECKING", label: "Đã khám", color: "green" },
-  { key: "COMPLETED", label: "Hoàn thành", color: "success" },
-  { key: "CANCELED", label: "Đã hủy", color: "red" },
-  { key: "ABSENT", label: "Vắng mặt", color: "volcano" },
-];
 
 const BookingDashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -42,23 +36,12 @@ const BookingDashboard = () => {
 
       if (status === "ALL") {
         // Gọi API cho tất cả status và merge lại
-        const statusList = [
-          "PENDING",
-          "CONFIRMED",
-          "CHECKING",
-          "COMPLETED",
-          "CANCELED",
-          "ABSENT",
-        ];
-
         console.log(" Fetching all appointments for all statuses...");
 
-        const promises = statusList.map(async (s) => {
+        const promises = APPOINTMENT_STATUS_KEYS.map(async (s) => {
           try {
             console.log(` Trying to fetch appointments for status: ${s}`);
-            const response = await api.get(
-              `/appointment/by-status?status=${s}`
-            );
+            const response = await getAppointmentsByStatus(s);
             console.log(
               `Status ${s}:`,
               response.data?.length || 0,
@@ -82,9 +65,7 @@ const BookingDashboard = () => {
         // Gọi API với status cụ thể
         console.log(` Fetching appointments for status: ${status}`);
         try {
-          const response = await api.get(
-            `/appointment/by-status?status=${status}`
-          );
+          const response = await getAppointmentsByStatus(status);
           allAppointments = response.data || [];
           console.log(
             `Loaded ${allAppointments.length} appointments for ${status}`
@@ -101,7 +82,7 @@ const BookingDashboard = () => {
           console.log(`Trying fallback endpoints...`);
           try {
             // Try without query parameter
-            const fallbackResponse = await api.get(`/appointments`);
+            const fallbackResponse = await getAppointmentsByStatus(status);
             const allData = fallbackResponse.data || [];
             allAppointments = allData.filter((apt) => apt.status === status);
             console.log(
@@ -126,7 +107,7 @@ const BookingDashboard = () => {
       console.log(" Sample appointment data:", sortedData[0]);
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      message.error("Không thể tải danh sách lịch hẹn");
+      message.error(NOTIFICATION_MESSAGES.BOOKING.LOAD_FAILED);
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -379,7 +360,7 @@ const BookingDashboard = () => {
   };
 
   const handleEdit = () => {
-    message.info("Chức năng chỉnh sửa đang được phát triển");
+    message.info(NOTIFICATION_MESSAGES.DASHBOARD.BOOKING_EDITING);
   };
 
   return (

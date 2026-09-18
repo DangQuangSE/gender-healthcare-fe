@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { message, Spin } from "antd";
 import "./FeedbackList.css";
+import CONTENT_MESSAGES from "../../../shared/constants/contentMessages";
+import { getAllServiceFeedback } from "../../feedback/feedbackApi";
 
 // Component nhỏ để hiển thị ngôi sao
 const StarRating = ({ rating }) => {
@@ -38,17 +40,11 @@ const FeedbackList = () => {
     const fetchFeedbacks = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/feedback");
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setFeedbacks(data);
+        const response = await getAllServiceFeedback();
+        setFeedbacks(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("Error fetching feedbacks:", error);
-        message.error("Không thể tải danh sách đánh giá. Vui lòng thử lại!");
+        message.error(CONTENT_MESSAGES.FEEDBACK_LOAD_FAILED);
       } finally {
         setLoading(false);
       }
@@ -62,7 +58,9 @@ const FeedbackList = () => {
       <div className="feedback-list-container">
         <div style={{ textAlign: "center", padding: "2rem" }}>
           <Spin size="large" />
-          <p style={{ marginTop: "1rem" }}>Đang tải đánh giá...</p>
+          <p style={{ marginTop: "1rem" }}>
+            {CONTENT_MESSAGES.FEEDBACK_LOADING}
+          </p>
         </div>
       </div>
     );
@@ -72,7 +70,7 @@ const FeedbackList = () => {
     return (
       <div className="feedback-list-container">
         <div style={{ textAlign: "center", padding: "2rem" }}>
-          <p>Chưa có đánh giá nào.</p>
+          <p>{CONTENT_MESSAGES.FEEDBACK_EMPTY}</p>
         </div>
       </div>
     );

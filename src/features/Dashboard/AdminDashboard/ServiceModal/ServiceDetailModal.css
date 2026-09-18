@@ -1,0 +1,29 @@
+.service-detail__tag {
+  margin-left: 8px;
+}
+
+.service-detail__sub-services {
+  margin-left: 16px;
+}
+
+.service-detail__sub-service {
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.service-detail__sub-service-name,
+.service-detail__sub-service-description,
+.service-detail__sub-service-meta {
+  margin: 0;
+}
+
+.service-detail__sub-service-description,
+.service-detail__sub-service-meta {
+  font-size: 12px;
+}
+
+.service-detail__sub-service-description {
+  color: #666;
+}

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Modal, Button, Card } from "antd";
+import { Modal, Button, Card, message } from "antd";
 import "./MedicalResultModal.css";
-import TreatmentProtocolViewModal from "../../../features/Dashboard/ConsultantDashboard/TreatmentProtocol/TreatmentProtocolViewModal";
-import api from "../../../configs/api";
+import TreatmentProtocolViewModal from "../../../features/medical/components/TreatmentProtocolViewModal";
+import { getTreatmentProtocol } from "../../../features/medical/medicalApi";
+import { MEDICAL_RESULT_MESSAGES } from "../../../features/medical/medicalResultMessages";
 
 const MedicalResultModal = ({ visible, onClose, selectedResult }) => {
   const [loadingProtocol, setLoadingProtocol] = useState(false);
@@ -15,12 +16,11 @@ const MedicalResultModal = ({ visible, onClose, selectedResult }) => {
   const fetchTreatmentProtocolDetail = async (protocolId) => {
     try {
       setLoadingProtocol(true);
-      const response = await api.get(`/treatment/${protocolId}`);
+      const response = await getTreatmentProtocol(protocolId);
       setSelectedProtocol(response.data);
       setTreatmentProtocolModalVisible(true);
-    } catch (error) {
-      console.error("Error fetching treatment protocol detail:", error);
-      message.error("Không thể tải thông tin phác đồ điều trị!");
+    } catch {
+      message.error(MEDICAL_RESULT_MESSAGES.TREATMENT_PROTOCOL_LOAD_FAILED);
     } finally {
       setLoadingProtocol(false);
     }

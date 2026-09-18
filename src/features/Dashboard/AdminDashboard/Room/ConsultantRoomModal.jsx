@@ -18,8 +18,9 @@ import {
   fetchRoomConsultants,
   addConsultantToRoom,
   removeConsultantFromRoom,
-} from "./roomAPI";
-import api from "../../../../configs/api";
+} from "../../../catalog/api/roomApi";
+import { fetchUsersByRole } from "../../../admin/api/userApi";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const ConsultantRoomModal = ({ visible, onCancel, room }) => {
   const [consultants, setConsultants] = useState([]); // Danh sách tất cả consultant
@@ -52,12 +53,11 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
   const loadAllConsultants = async () => {
     try {
       setLoadingConsultants(true);
-      const response = await api.get("/admin/users?role=CONSULTANT");
-      console.log("All consultants loaded:", response.data);
-      setConsultants(response.data || []);
+      const consultants = await fetchUsersByRole("CONSULTANT");
+      setConsultants(consultants);
     } catch (error) {
       console.error(" Error loading consultants:", error);
-      message.error("Không thể tải danh sách bác sĩ!");
+      message.error(NOTIFICATION_MESSAGES.ROOM.CONSULTANTS_LOAD_FAILED);
     } finally {
       setLoadingConsultants(false);
     }
@@ -80,7 +80,7 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
     } catch (error) {
       console.error(" Error loading room consultants:", error);
       // fetchRoomConsultants đã xử lý 404, nên chỉ hiển thị error cho các lỗi khác
-      message.error("Không thể tải danh sách bác sĩ trong phòng!");
+      message.error(NOTIFICATION_MESSAGES.ROOM.ROOM_CONSULTANTS_LOAD_FAILED);
       setRoomConsultants([]);
     } finally {
       setLoading(false);
@@ -94,7 +94,7 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
       const values = await form.validateFields();
 
       if (!room?.id) {
-        message.warning("Không tìm thấy thông tin phòng!");
+        message.warning(NOTIFICATION_MESSAGES.ROOM.ROOM_NOT_FOUND);
         return;
       }
 
@@ -104,7 +104,7 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
       );
 
       if (isAlreadyInRoom) {
-        message.warning("Bác sĩ này đã có trong phòng!");
+        message.warning(NOTIFICATION_MESSAGES.ROOM.CONSULTANT_EXISTS);
         return;
       }
 
@@ -120,7 +120,7 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
 
       console.log(" Adding consultant with data:", consultantData);
       await addConsultantToRoom(room.id, consultantData);
-      message.success("Thêm bác sĩ vào phòng thành công!");
+      message.success(NOTIFICATION_MESSAGES.ROOM.ADD_SUCCESS);
 
       // Reset form và reload data
       form.resetFields();
@@ -128,7 +128,7 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
     } catch (error) {
       if (error.errorFields) {
         // Form validation error
-        message.warning("Vui lòng điền đầy đủ thông tin!");
+        message.warning(NOTIFICATION_MESSAGES.ROOM.FORM_REQUIRED);
         return;
       }
 
@@ -136,7 +136,7 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
-        "Có lỗi xảy ra khi thêm bác sĩ vào phòng!";
+        NOTIFICATION_MESSAGES.ROOM.ADD_FAILED;
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -154,14 +154,14 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
         assignmentId,
       });
       await removeConsultantFromRoom(room.id, assignmentId);
-      message.success("Xóa bác sĩ khỏi phòng thành công!");
+      message.success(NOTIFICATION_MESSAGES.ROOM.REMOVE_SUCCESS);
       await loadRoomConsultants();
     } catch (error) {
       console.error(" Error removing consultant from room:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
-        "Có lỗi xảy ra khi xóa bác sĩ khỏi phòng!";
+        NOTIFICATION_MESSAGES.ROOM.REMOVE_FAILED;
       message.error(errorMessage);
     } finally {
       setLoading(false);

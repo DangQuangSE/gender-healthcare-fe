@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import "./ContactPage.css";
 import Logo from "../../../assets/Logo";
+import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -49,9 +50,7 @@ export default function ContactPage() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      message.success(
-        "Gửi tin nhắn thành công! Chúng tôi sẽ phản hồi trong thời gian sớm nhất."
-      );
+      message.success(NOTIFICATION_MESSAGES.CONTACT.SEND_SUCCESS);
       setIsSubmitted(true);
       form.resetFields();
 
@@ -60,7 +59,7 @@ export default function ContactPage() {
       }, 3000);
     } catch (error) {
       console.error("Error submitting form:", error);
-      message.error("Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại!");
+      message.error(NOTIFICATION_MESSAGES.CONTACT.SEND_FAILED);
     } finally {
       setLoading(false);
     }

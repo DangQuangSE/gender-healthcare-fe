@@ -3,47 +3,37 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { message, Modal } from "antd";
-import api from "../../../configs/api";
+import { verifyVNPayPayment as verifyVNPayPaymentRequest } from "../../../features/payments/paymentApi";
+import {
+  cancelAppointment,
+  createOnlineMeeting,
+  getAppointmentsByStatus,
+} from "../../../features/appointments/appointmentApi";
+import { createNotification } from "../../../features/notifications/notificationApi";
 import authStorage from "../../../shared/storage/authStorage";
 import bookingStorage from "../../../shared/storage/bookingStorage";
 import RatingModal from "../../../components/RatingModal/RatingModal";
 import MedicalResultModal from "./MedicalResultModal";
+import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
+import {
+  APPOINTMENT_STATUS_BY_TAB,
+  APPOINTMENT_STATUS_LABELS,
+  BOOKING_TABS,
+  CANCELLABLE_APPOINTMENT_STATUSES,
+} from "./Booking.constants";
 import "./Booking.css";
-
-const TABS = [
-  { key: "upcoming", label: "Lịch hẹn sắp đến" },
-  { key: "completed", label: "Hoàn thành" },
-  { key: "history", label: "Lịch sử đặt chỗ" },
-  { key: "combo", label: "Gói khám" },
-];
-
-// API status mapping
-const STATUS_MAP = {
-  upcoming: ["CONFIRMED", "PENDING", "CHECKED"],
-  completed: ["COMPLETED"],
-  history: ["CANCELED"],
-};
-
-// Status display mapping (Vietnamese)
-const STATUS_DISPLAY = {
-  CONFIRMED: "Đã xác nhận",
-  PENDING: "Chờ xác nhận",
-  CHECKED: "Đã check in",
-  COMPLETED: "Hoàn thành",
-  CANCELED: "Đã hủy",
-};
 
 // Function to create appointment notification
 const createAppointmentNotification = async (appointmentId) => {
   try {
     const notificationData = {
-      title: "Cuộc hẹn sắp tới",
-      content: "Bạn có lịch hẹn",
+      title: NOTIFICATION_MESSAGES.BOOKING.APPOINTMENT_TITLE,
+      content: NOTIFICATION_MESSAGES.BOOKING.APPOINTMENT_CONTENT,
       type: "APPOINTMENT",
       appointmentId: appointmentId,
     };
 
-    await api.post("/notifications", notificationData);
+    await createNotification(notificationData);
   } catch {
     // Don't show error to user as this is not critical for booking flow
   }
@@ -91,7 +81,7 @@ const Booking = () => {
       );
     }
 
-    message.success("Cảm ơn bạn đã đánh giá!");
+    message.success(NOTIFICATION_MESSAGES.BOOKING.RATING_SUCCESS);
     setRatingModalVisible(false);
   };
 
@@ -115,18 +105,16 @@ const Booking = () => {
       });
       setResultModalVisible(true);
     } else {
-      message.warning("Chưa có kết quả khám cho lịch hẹn này!");
+      message.warning(NOTIFICATION_MESSAGES.BOOKING.RESULT_NOT_FOUND);
     }
   };
 
   // Function to verify VNPay payment with backend
-  const verifyVNPayPayment = useCallback(async (urlParams) => {
+  const handleVerifyVNPayPayment = useCallback(async (urlParams) => {
     try {
-      await api.get("/payment/vnpay/vnpay-return", {
-        params: Object.fromEntries(urlParams.entries()),
-      });
+      await verifyVNPayPaymentRequest(Object.fromEntries(urlParams.entries()));
     } catch {
-      message.error("Có lỗi khi xác thực thanh toán với server.");
+      message.error(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_VERIFY_FAILED);
     }
   }, []);
 
@@ -138,19 +126,17 @@ const Booking = () => {
 
     setLoading(true);
     try {
-      const statuses = STATUS_MAP[activeTab];
+      const statuses = APPOINTMENT_STATUS_BY_TAB[activeTab];
       let data = [];
 
       if (activeTab === "upcoming") {
         const requests = statuses.map((status) =>
-          api.get(`/appointment/by-status?status=${status}`)
+          getAppointmentsByStatus(status)
         );
         const responses = await Promise.all(requests);
         data = responses.flatMap((res) => res.data);
       } else {
-        const res = await api.get(
-          `/appointment/by-status?status=${statuses[0]}`
-        );
+        const res = await getAppointmentsByStatus(statuses[0]);
         data = res.data;
       }
 
@@ -171,11 +157,9 @@ const Booking = () => {
   const createZoomMeeting = useCallback(
     async (appointmentId) => {
       try {
-        await api.get(
-          `/zoom/test-create-meeting?appointmentId=${appointmentId}`
-        );
+        await createOnlineMeeting(appointmentId);
 
-        message.success("Phòng tư vấn online đã được tạo!");
+        message.success(NOTIFICATION_MESSAGES.BOOKING.ONLINE_ROOM_CREATED);
 
         // Refresh appointments để lấy joinUrl mới
         setTimeout(() => {
@@ -189,11 +173,11 @@ const Booking = () => {
   );
 
   const handleCancelAppointment = async (appointmentId) => {
-    if (!window.confirm("Bạn chắc chắn muốn hủy lịch hẹn này?")) return;
+    if (!window.confirm(NOTIFICATION_MESSAGES.BOOKING.CANCEL_CONFIRM)) return;
 
     try {
-      await api.delete(`/appointment/${appointmentId}/cancel`);
-      message.success("Hủy lịch hẹn thành công");
+      await cancelAppointment(appointmentId);
+      message.success(NOTIFICATION_MESSAGES.BOOKING.CANCEL_SUCCESS);
 
       // Làm mới lại danh sách sau khi hủy
       setAppointments((prev) =>
@@ -203,19 +187,19 @@ const Booking = () => {
       // Handle specific error cases
       if (err.response?.status === 500) {
         message.error(
-          "Lỗi hệ thống: Không thể hủy lịch hẹn này. Vui lòng liên hệ hỗ trợ."
+          NOTIFICATION_MESSAGES.BOOKING.CANCEL_SERVER_ERROR
         );
       } else if (err.response?.status === 404) {
-        message.error("Lịch hẹn không tồn tại hoặc đã được hủy.");
+        message.error(NOTIFICATION_MESSAGES.BOOKING.CANCEL_NOT_FOUND);
         setAppointments((prev) =>
           prev.filter((apt) => apt.id !== appointmentId)
         );
       } else if (err.response?.status === 400) {
         message.error(
-          "Không thể hủy lịch hẹn này. Lịch hẹn có thể đã được xác nhận hoặc đã diễn ra."
+          NOTIFICATION_MESSAGES.BOOKING.CANCEL_INVALID_STATUS
         );
       } else {
-        message.error("Không thể hủy lịch hẹn. Vui lòng thử lại sau.");
+        message.error(NOTIFICATION_MESSAGES.BOOKING.CANCEL_FAILED);
       }
     }
   };
@@ -240,18 +224,16 @@ const Booking = () => {
 
       if (vnpResponseCode === "00" && vnpTransactionStatus === "00") {
         // Thanh toán VNPay thành công
-        message.success("Thanh toán thành công! Lịch hẹn đã được xác nhận.");
+        message.success(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_SUCCESS);
 
         // Gọi API để verify payment với backend
-        verifyVNPayPayment(query);
+        handleVerifyVNPayPayment(query);
 
         // Tạo Zoom meeting cho appointment vừa thanh toán
         // Delay một chút để backend cập nhật status, sau đó lấy appointments CONFIRMED
         setTimeout(async () => {
           try {
-            const response = await api.get(
-              "/appointment/by-status?status=CONFIRMED"
-            );
+            const response = await getAppointmentsByStatus("CONFIRMED");
             const confirmedAppointments = response.data;
 
             // Tạo Zoom meeting cho appointment mới nhất (vừa được confirm)
@@ -271,11 +253,11 @@ const Booking = () => {
         }, 2000); // Delay 2 giây để backend cập nhật
       } else if (vnpResponseCode === "24") {
         // Người dùng hủy thanh toán - cancel cuộc hẹn
-        message.warning("Thanh toán đã bị hủy. Đang hủy lịch hẹn...");
+        message.warning(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_CANCELLED);
         // Handle cancellation logic here...
       } else {
         // Thanh toán VNPay thất bại
-        message.error("Thanh toán thất bại hoặc đã bị hủy.");
+        message.error(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_FAILED);
       }
 
       // Clean URL sau khi xử lý
@@ -290,7 +272,7 @@ const Booking = () => {
       setTimeout(refreshAppointments, 500);
       return;
     }
-  }, [search, verifyVNPayPayment, fetchAppointments, token, createZoomMeeting]);
+  }, [search, handleVerifyVNPayPayment, fetchAppointments, token, createZoomMeeting]);
 
   const renderAppointments = () => {
     if (loading) {
@@ -300,7 +282,7 @@ const Booking = () => {
     }
 
     if (!appointments?.length) {
-      const currentTab = TABS.find((t) => t.key === activeTab);
+      const currentTab = BOOKING_TABS.find((t) => t.key === activeTab);
 
       return (
         <div className="booking-empty-profile">
@@ -331,7 +313,8 @@ const Booking = () => {
             <p>
               <strong>Trạng thái:</strong>{" "}
               <span className={`status ${appointment.status.toLowerCase()}`}>
-                {STATUS_DISPLAY[appointment.status] || appointment.status}
+                {APPOINTMENT_STATUS_LABELS[appointment.status] ||
+                  appointment.status}
               </span>
             </p>
             <p>
@@ -350,9 +333,7 @@ const Booking = () => {
                 Xem chi tiết
               </button>
 
-              {["CONFIRMED", "PENDING", "CHECKED"].includes(
-                appointment.status
-              ) && (
+              {CANCELLABLE_APPOINTMENT_STATUSES.includes(appointment.status) && (
                 <button
                   className="cancel-button-profile"
                   onClick={() => handleCancelAppointment(appointment.id)}
@@ -435,7 +416,7 @@ const Booking = () => {
       <h2 className="booking-title-profile">Lịch sử đặt chỗ</h2>
 
       <div className="booking-tabs-profile">
-        {TABS.map((tab) => (
+        {BOOKING_TABS.map((tab) => (
           <button
             key={tab.key}
             className={`tab-button-profile ${
@@ -490,7 +471,7 @@ const Booking = () => {
                 <span
                   className={`detail-value status ${selectedAppointment.status.toLowerCase()}`}
                 >
-                  {STATUS_DISPLAY[selectedAppointment.status] ||
+                  {APPOINTMENT_STATUS_LABELS[selectedAppointment.status] ||
                     selectedAppointment.status}
                 </span>
               </div>
@@ -556,7 +537,8 @@ const Booking = () => {
                           <span
                             className={`detail-value status ${detail.status?.toLowerCase()}`}
                           >
-                            {STATUS_DISPLAY[detail.status] || detail.status}
+                            {APPOINTMENT_STATUS_LABELS[detail.status] ||
+                              detail.status}
                           </span>
                         </div>
                         {detail.joinUrl && (

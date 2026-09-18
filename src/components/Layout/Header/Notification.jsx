@@ -1,20 +1,21 @@
 import "./Notification.css";
-import { Badge, Dropdown, Menu, Popconfirm } from "antd";
-import { BellFilled, MoreOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Badge, Popconfirm } from "antd";
+import { BellFilled, MoreOutlined } from "@ant-design/icons";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useState, useRef, useEffect } from "react";
-import api from "../../../configs/api";
+import { NOTIFICATION_MESSAGES } from "../../../shared/constants/notificationMessages";
+
+const { DROPDOWN } = NOTIFICATION_MESSAGES;
 
 const formatDateTime = (dateTimeString) => {
-  if (!dateTimeString) return "Vừa xong";
+  if (!dateTimeString) return DROPDOWN.TIME_JUST_NOW;
 
   try {
     const date = parseISO(dateTimeString);
     return formatDistanceToNow(date, { addSuffix: true, locale: vi });
-  } catch (e) {
-    console.error("Error parsing date:", e);
-    return "Vừa xong";
+  } catch {
+    return DROPDOWN.TIME_JUST_NOW;
   }
 };
 
@@ -28,14 +29,12 @@ const formatNotificationMessage = (notification) => {
       const formattedDate = new Date(appointmentDate).toLocaleDateString(
         "vi-VN"
       );
-      return {
-        __html: `Bạn có lịch hẹn ${serviceName} vào ngày ${formattedDate}<br/><small style="color: #888; font-style: italic;">(Ẩn vào để xem chi tiết)</small>`,
-      };
+      return DROPDOWN.APPOINTMENT_FORMAT(serviceName, formattedDate);
     }
   }
 
   // Fallback to original content
-  return notification.content || `Thông báo ${notification.id}`;
+  return notification.content || DROPDOWN.CONTENT_FALLBACK(notification.id);
 };
 
 const NotificationDropdown = ({
@@ -44,6 +43,7 @@ const NotificationDropdown = ({
   show,
   toggle,
   onClickNotification,
+  onDeleteNotification,
   loadMoreNotifications,
   setNotifications, // Thêm prop để cập nhật danh sách thông báo
 }) => {
@@ -53,10 +53,6 @@ const NotificationDropdown = ({
 
   // Lọc thông báo dựa trên trạng thái active và tab đang chọn
   const activeNotifications = notifications.filter((n) => {
-    // Log để debug
-    console.log(`Notification ${n.id}: isActive = ${n.isActive}`);
-
-    // Kiểm tra chính xác giá trị isActive
     return n.isActive === true;
   });
 
@@ -102,18 +98,15 @@ const NotificationDropdown = ({
     e.stopPropagation(); // Ngăn không cho sự kiện click lan ra ngoài
 
     try {
-      await api.delete(`/notifications/${notificationId}`);
-
-      // Cập nhật state để xóa thông báo khỏi UI
-      if (setNotifications) {
-        setNotifications((prevNotifications) =>
-          prevNotifications.filter((n) => n.id !== notificationId)
+      if (onDeleteNotification) {
+        await onDeleteNotification(notificationId);
+      } else if (setNotifications) {
+        setNotifications((previousNotifications) =>
+          previousNotifications.filter((item) => item.id !== notificationId)
         );
       }
-
-      console.log(`Đã xóa thông báo ID: ${notificationId}`);
-    } catch (error) {
-      console.error("Lỗi khi xóa thông báo:", error);
+    } catch {
+      // The parent may display a global error notification when needed.
     }
   };
 
@@ -131,7 +124,7 @@ const NotificationDropdown = ({
       {show && (
         <div className="simple-notification-dropdown">
           <div className="notification-header">
-            <h3>Thông báo</h3>
+            <h3>{DROPDOWN.TITLE}</h3>
           </div>
 
           <div className="notification-tabs">
@@ -139,23 +132,23 @@ const NotificationDropdown = ({
               className={`tab-button ${activeTab === "all" ? "active" : ""}`}
               onClick={() => setActiveTab("all")}
             >
-              Tất cả
+              {DROPDOWN.ALL}
             </button>
             <button
               className={`tab-button ${activeTab === "unread" ? "active" : ""}`}
               onClick={() => setActiveTab("unread")}
             >
-              Chưa đọc
+              {DROPDOWN.UNREAD}
             </button>
           </div>
 
           {loading ? (
-            <div className="notification-loading">Đang tải...</div>
+            <div className="notification-loading">{DROPDOWN.LOADING}</div>
           ) : filteredNotifications.length === 0 ? (
             <div className="notification-empty">
               {activeTab === "all"
-                ? "Không có thông báo nào"
-                : "Không có thông báo chưa đọc"}
+                ? DROPDOWN.EMPTY
+                : DROPDOWN.EMPTY_UNREAD}
             </div>
           ) : (
             <>
@@ -176,29 +169,24 @@ const NotificationDropdown = ({
                       onClick={() => onClickNotification(n)}
                     >
                       <h4 className="notification-title">
-                        {n.title || "Thông báo"}
+                        {n.title || NOTIFICATION_MESSAGES.HEADER.TITLE_FALLBACK}
                       </h4>
                       <p
                         className="notification-message"
-                        {...(typeof formatNotificationMessage(n) === "object" &&
-                        formatNotificationMessage(n).__html
-                          ? {
-                              dangerouslySetInnerHTML:
-                                formatNotificationMessage(n),
-                            }
-                          : { children: formatNotificationMessage(n) })}
-                      />
+                      >
+                        {formatNotificationMessage(n)}
+                      </p>
                       <span className="notification-time">
                         {formatDateTime(n.createdAt)}
                       </span>
                     </div>
                     <div className="notification-actions">
                       <Popconfirm
-                        title="Xóa thông báo này?"
-                        description="Bạn có chắc chắn muốn xóa thông báo này không?"
+                        title={DROPDOWN.DELETE_TITLE}
+                        description={DROPDOWN.DELETE_DESCRIPTION}
                         onConfirm={(e) => handleDeleteNotification(e, n.id)}
-                        okText="Xóa"
-                        cancelText="Hủy"
+                        okText={DROPDOWN.DELETE_CONFIRM}
+                        cancelText={DROPDOWN.DELETE_CANCEL}
                       >
                         <button className="notification-action-button">
                           <MoreOutlined />
@@ -214,7 +202,7 @@ const NotificationDropdown = ({
                       className="load-more-button"
                       onClick={() => setVisibleCount((prev) => prev + 5)}
                     >
-                      Xem thêm thông báo trước đó
+                        {DROPDOWN.VIEW_OLDER}
                     </button>
                   </div>
                 )}
@@ -226,7 +214,7 @@ const NotificationDropdown = ({
                         className="load-more-button"
                         onClick={loadMoreNotifications}
                       >
-                        Tải thêm thông báo cũ hơn
+                        {DROPDOWN.LOAD_OLDER}
                       </button>
                     </div>
                   )}
@@ -238,7 +226,7 @@ const NotificationDropdown = ({
                   onClick={() => (window.location.href = "/notifications")}
                 >
                   <div className="notification-view-all-button">
-                    Xem thông báo trước đó
+                        {DROPDOWN.VIEW_ALL}
                   </div>
                 </button>
               </div>

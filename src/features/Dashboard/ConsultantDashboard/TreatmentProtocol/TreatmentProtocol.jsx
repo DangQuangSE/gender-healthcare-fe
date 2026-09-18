@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Button, Table, Modal, Form, Input, message, Popconfirm } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import TreatmentProtocolViewModal from "./TreatmentProtocolViewModal";
-import api from "../../../../configs/api";
+import TreatmentProtocolViewModal from "../../../medical/components/TreatmentProtocolViewModal";
+import {
+  createTreatmentProtocol,
+  deleteTreatmentProtocol,
+  getTreatmentProtocols,
+  updateTreatmentProtocol,
+} from "../../../medical/medicalApi";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const { TextArea } = Input;
 
-const TreatmentProtocol = ({ userId }) => {
+const TreatmentProtocol = () => {
   const [protocols, setProtocols] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingProtocol, setEditingProtocol] = useState(null);
@@ -17,11 +23,10 @@ const TreatmentProtocol = ({ userId }) => {
   // Lấy tất cả phác đồ điều trị
   const fetchTreatmentProtocols = async () => {
     try {
-      const response = await api.get('/treatment');
+      const response = await getTreatmentProtocols();
       setProtocols(response.data);
-    } catch (error) {
-      console.error("Error fetching treatment protocols:", error);
-      message.error("Không thể tải danh sách phác đồ điều trị!");
+    } catch {
+      message.error(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.LOAD_FAILED);
     }
   };
 
@@ -45,13 +50,12 @@ const TreatmentProtocol = ({ userId }) => {
   // Xử lý xóa phác đồ
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/treatment/${id}`);
-      message.success("Xóa phác đồ thành công!");
+      await deleteTreatmentProtocol(id);
+      message.success(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.DELETE_SUCCESS);
       // Tải lại danh sách từ server
       await fetchTreatmentProtocols();
-    } catch (error) {
-      console.error("Error deleting treatment protocol:", error);
-      message.error("Không thể xóa phác đồ. Vui lòng thử lại!");
+    } catch {
+      message.error(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.DELETE_FAILED);
     }
   };
 
@@ -70,23 +74,22 @@ const TreatmentProtocol = ({ userId }) => {
 
       if (editingProtocol) {
         // Gọi API cập nhật phác đồ
-        await api.put(`/treatment/${editingProtocol.id}`, protocolData);
-        message.success("Cập nhật phác đồ thành công!");
+      await updateTreatmentProtocol(editingProtocol.id, protocolData);
+        message.success(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.UPDATE_SUCCESS);
         // Tải lại danh sách từ server
         await fetchTreatmentProtocols();
       } else {
         // Gọi API tạo phác đồ mới
-        await api.post('/treatment', protocolData);
-        message.success("Tạo phác đồ thành công!");
+      await createTreatmentProtocol(protocolData);
+        message.success(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.CREATE_SUCCESS);
         // Tải lại danh sách từ server
         await fetchTreatmentProtocols();
       }
 
       setIsModalVisible(false);
       form.resetFields();
-    } catch (error) {
-      console.error("Error:", error);
-      message.error("Có lỗi xảy ra. Vui lòng thử lại!");
+    } catch {
+      message.error(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.SAVE_FAILED);
     }
   };
 

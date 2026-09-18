@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
-import api from "../../configs/api";
 import authStorage from "../../shared/storage/authStorage";
 import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
+import { fetchComments } from "../../features/blog/api/commentApi";
 import { CommentIcon } from "../Icons/BlogIcons";
 import "./CommentSection.css";
 
@@ -27,7 +27,7 @@ const CommentSection = ({
   const loadComments = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/comment/blog/${blogId}`);
+      const response = await fetchComments(blogId);
       const data = response.data;
 
       // Transform comments data

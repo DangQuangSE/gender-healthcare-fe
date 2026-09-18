@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Table,
@@ -8,22 +8,26 @@ import {
   Input,
   message,
   Form,
-  Popconfirm,
 } from "antd";
 import {
   PlusOutlined,
-  EditOutlined,
-  EyeOutlined,
-  CheckOutlined,
-  StopOutlined,
-  DeleteColumnOutlined,
-  DeleteOutlined,
 } from "@ant-design/icons";
-import api from "../../../../configs/api";
+import {
+  getServiceById as getServiceByIdRequest,
+  getServices,
+  createService as createServiceRequest,
+  updateService as updateServiceRequest,
+  activateService as activateServiceRequest,
+  deactivateService as deactivateServiceRequest,
+  createComboService as createComboServiceRequest,
+} from "../../../catalog/catalogApi";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 import ServiceModal from "./ServiceModal";
 import ServiceDetailModal from "./ServiceDetailModal";
+import { createServiceManagementColumns } from "./ServiceManagementColumns";
+import { SERVICE_MANAGEMENT_MESSAGES } from "./serviceManagementMessages";
+import "./ServiceManagement.css";
 
-// Helper functions for service type
 const getServiceTypeColor = (serviceType) => {
   switch (serviceType) {
     case "CONSULTING":
@@ -39,22 +43,7 @@ const getServiceTypeColor = (serviceType) => {
   }
 };
 
-const getServiceTypeLabel = (serviceType) => {
-  switch (serviceType) {
-    case "CONSULTING":
-      return "Tư Vấn";
-    case "CONSULTING_ON":
-      return "Tư vấn trực tuyến";
-    case "TESTING":
-      return "Xét nghiệm";
-    case "EXAMINATION":
-      return "Khám bệnh";
-    case "COMBO":
-      return "Gói khám";
-    default:
-      return serviceType?.replace(/_/g, " ") || "N/A";
-  }
-};
+const toArray = (data) => (Array.isArray(data) ? data : data ? [data] : []);
 
 /**
  * Service Management Component
@@ -75,28 +64,10 @@ const ServiceManagement = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [form] = Form.useForm();
 
-  // Load services on mount
-  useEffect(() => {
-    loadServices();
-  }, []);
-
   // API Functions
-  const fetchServices = async () => {
-    try {
-      const response = await api.get("/services");
-      const data = Array.isArray(response.data)
-        ? response.data
-        : [response.data];
-      return data;
-    } catch (error) {
-      console.error("Lỗi lấy dịch vụ:", error);
-      return [];
-    }
-  };
-
   const fetchServiceById = async (id) => {
     try {
-      const response = await api.get(`/services/${id}`);
+      const response = await getServiceByIdRequest(id);
       return response.data;
     } catch (error) {
       console.error("Lỗi lấy dịch vụ theo ID:", error);
@@ -106,27 +77,17 @@ const ServiceManagement = () => {
 
   const fetchAvailableServices = async () => {
     try {
-      console.log(" Fetching available services for combo...");
-      const response = await api.get("/services");
-      console.log(" Available services response:", response);
+      const response = await getServices();
 
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data
-        ? [response.data]
-        : [];
+      const data = toArray(response.data);
 
       // Chỉ lấy services: không phải combo (bỏ filter theo status)
       const filteredData = data.filter((service) => !service.isCombo);
-      console.log(
-        " Filtered available services (non-combo, all status):",
-        filteredData
-      );
 
       return filteredData;
     } catch (error) {
       console.error(" Lỗi lấy danh sách services:", error);
-      message.error("Không thể tải danh sách services để tạo combo!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.COMBO_LOAD_FAILED);
       return [];
     }
   };
@@ -142,7 +103,6 @@ const ServiceManagement = () => {
         discountPercent: service.discountPercent
           ? parseFloat(service.discountPercent)
           : 0,
-        isActive: service.isActive !== undefined ? service.isActive : true,
         isCombo: service.isCombo || false,
         specializationIds: service.specializationIds || [],
         ...(service.isCombo &&
@@ -152,9 +112,7 @@ const ServiceManagement = () => {
           }),
       };
 
-      console.log(" Sending service data:", serviceData);
-      const response = await api.post("/services", serviceData);
-      console.log(" Backend response:", response.data);
+      const response = await createServiceRequest(serviceData);
       return response.data;
     } catch (error) {
       console.error("Lỗi thêm dịch vụ:", error);
@@ -173,17 +131,10 @@ const ServiceManagement = () => {
         discountPercent: service.discountPercent
           ? parseFloat(service.discountPercent)
           : 0,
-        isActive: service.isActive !== undefined ? service.isActive : true,
-        isCombo: service.isCombo || false,
         specializationIds: service.specializationIds || [],
-        ...(service.isCombo &&
-          service.subServiceIds &&
-          service.subServiceIds.length > 0 && {
-            subServiceIds: service.subServiceIds,
-          }),
       };
 
-      const response = await api.put(`/services/${id}`, serviceData);
+      const response = await updateServiceRequest(id, serviceData);
       return response.data;
     } catch (error) {
       console.error("Lỗi sửa dịch vụ:", error);
@@ -193,7 +144,7 @@ const ServiceManagement = () => {
 
   const deactivateService = async (id) => {
     try {
-      await api.put(`/services/${id}/deactivate`);
+      await deactivateServiceRequest(id);
     } catch (error) {
       console.error("Lỗi vô hiệu hóa dịch vụ:", error);
       throw error;
@@ -202,7 +153,7 @@ const ServiceManagement = () => {
 
   const activateService = async (id) => {
     try {
-      await api.put(`/services/${id}/activate`);
+      await activateServiceRequest(id);
     } catch (error) {
       console.error("Lỗi kích hoạt dịch vụ:", error);
       throw error;
@@ -211,7 +162,7 @@ const ServiceManagement = () => {
 
   const createComboService = async (serviceData) => {
     try {
-      const response = await api.post("/services/combo", serviceData);
+      const response = await createComboServiceRequest(serviceData);
       return response.data;
     } catch (error) {
       console.error("Lỗi tạo combo service:", error);
@@ -221,11 +172,7 @@ const ServiceManagement = () => {
 
   const searchServiceByName = async (name) => {
     try {
-      console.log(" Searching services with name:", name);
-      const response = await api.get("/services/search", {
-        params: { name: name },
-      });
-      console.log(" Search response:", response.data);
+      const response = await getServices({ name });
       return Array.isArray(response.data) ? response.data : [response.data];
     } catch (error) {
       console.error(" Lỗi tìm kiếm service:", error);
@@ -236,15 +183,21 @@ const ServiceManagement = () => {
   };
 
   // Load services
-  const loadServices = async () => {
+  const loadServices = useCallback(async () => {
     try {
-      const data = await fetchServices();
+      const response = await getServices();
+      const data = toArray(response.data);
       setServices(data);
     } catch (error) {
       console.error("Error loading services:", error);
-      message.error("Không thể tải danh sách services!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.LOAD_FAILED);
     }
-  };
+  }, []);
+
+  // Load services on mount
+  useEffect(() => {
+    loadServices();
+  }, [loadServices]);
 
   // Handlers
   const handleAddService = () => {
@@ -259,9 +212,7 @@ const ServiceManagement = () => {
     setIsComboService(true);
     form.resetFields();
     // Load available services for combo
-    console.log(" Loading available services for combo...");
     const services = await fetchAvailableServices();
-    console.log(" Available services loaded:", services);
     setAvailableServices(services);
     setIsServiceModalVisible(true);
   };
@@ -273,15 +224,13 @@ const ServiceManagement = () => {
 
       const formData = {
         ...serviceDetail,
-        duration: serviceDetail.duration
-          ? Math.floor(serviceDetail.duration / 60)
-          : null,
+        duration: serviceDetail.duration || null,
       };
       form.setFieldsValue(formData);
       setIsServiceModalVisible(true);
     } catch (error) {
       console.error("Lỗi lấy chi tiết dịch vụ:", error);
-      message.error("Không thể lấy thông tin chi tiết dịch vụ!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.DETAIL_LOAD_FAILED);
     }
   };
 
@@ -292,34 +241,24 @@ const ServiceManagement = () => {
       setIsServiceDetailModalVisible(true);
     } catch (error) {
       console.error("Lỗi lấy chi tiết dịch vụ:", error);
-      message.error("Không thể lấy thông tin chi tiết dịch vụ!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.DETAIL_LOAD_FAILED);
     }
   };
 
   const handleToggleServiceStatus = async (record) => {
     try {
-      console.log(
-        " Toggling service status:",
-        record.id,
-        "isActive:",
-        record.isActive
-      );
-
       if (record.isActive) {
-        console.log("⏸ Deactivating service...");
         await deactivateService(record.id);
-        message.success("Dịch vụ đã được vô hiệu hóa!");
+        message.success(NOTIFICATION_MESSAGES.SERVICE.DEACTIVATE_SUCCESS);
       } else {
-        console.log(" Activating service...");
         await activateService(record.id);
-        message.success("Dịch vụ đã được kích hoạt!");
+        message.success(NOTIFICATION_MESSAGES.SERVICE.ACTIVATE_SUCCESS);
       }
 
-      console.log(" Reloading services data...");
       await loadServices();
     } catch (error) {
       console.error("Lỗi thay đổi trạng thái dịch vụ:", error);
-      message.error("Có lỗi xảy ra khi thay đổi trạng thái dịch vụ!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.STATUS_UPDATE_FAILED);
     }
   };
 
@@ -327,15 +266,12 @@ const ServiceManagement = () => {
   const handleAddRegularService = async () => {
     try {
       const values = await form.validateFields();
-      console.log("🔵 Adding regular service with values:", values);
-
       const serviceData = {
         name: values.name,
         description: values.description,
         duration: values.duration ? parseInt(values.duration) : null,
         type: values.type,
         price: values.price ? parseFloat(values.price) : 0,
-        isActive: values.isActive !== undefined ? values.isActive : true,
         isCombo: false,
         specializationIds: values.specializationIds || [],
         discountPercent: values.discountPercent
@@ -343,7 +279,6 @@ const ServiceManagement = () => {
           : 0,
       };
 
-      console.log("🔵 Sending regular service data:", serviceData);
       await addService(serviceData);
 
       // Close modal and reset
@@ -353,10 +288,10 @@ const ServiceManagement = () => {
       setIsComboService(false);
 
       await loadServices();
-      message.success("Tạo dịch vụ thành công!");
+      message.success(NOTIFICATION_MESSAGES.SERVICE.CREATE_SUCCESS);
     } catch (error) {
       console.error(" Lỗi tạo dịch vụ thường:", error);
-      message.error("Có lỗi xảy ra khi tạo dịch vụ!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.CREATE_FAILED);
     }
   };
 
@@ -364,12 +299,10 @@ const ServiceManagement = () => {
   const handleSubmitComboService = async () => {
     try {
       const values = await form.validateFields();
-      console.log("🟠 Adding combo service with values:", values);
-
       const comboData = {
         name: values.name,
         description: values.description,
-        duration: values.duration ? parseInt(values.duration) * 60 : null,
+        duration: values.duration ? parseInt(values.duration) : null,
         type: values.type,
         isCombo: true,
         specializationIds: values.specializationIds || [],
@@ -379,7 +312,6 @@ const ServiceManagement = () => {
           : 0,
       };
 
-      console.log("🟠 Sending combo service data:", comboData);
       await createComboService(comboData);
 
       // Close modal and reset
@@ -389,10 +321,10 @@ const ServiceManagement = () => {
       setIsComboService(false);
 
       await loadServices();
-      message.success("Tạo gói dịch vụ thành công!");
+      message.success(NOTIFICATION_MESSAGES.SERVICE.COMBO_CREATE_SUCCESS);
     } catch (error) {
       console.error(" Lỗi tạo gói dịch vụ:", error);
-      message.error("Có lỗi xảy ra khi tạo gói dịch vụ!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.COMBO_CREATE_FAILED);
     }
   };
 
@@ -400,8 +332,6 @@ const ServiceManagement = () => {
   const handleUpdateService = async () => {
     try {
       const values = await form.validateFields();
-      console.log("🟡 Updating service with values:", values);
-
       await updateService(editingService.id, values);
 
       // Close modal and reset
@@ -411,10 +341,10 @@ const ServiceManagement = () => {
       setIsComboService(false);
 
       await loadServices();
-      message.success("Cập nhật dịch vụ thành công!");
+      message.success(NOTIFICATION_MESSAGES.SERVICE.UPDATE_SUCCESS);
     } catch (error) {
       console.error(" Lỗi cập nhật dịch vụ:", error);
-      message.error("Có lỗi xảy ra khi cập nhật dịch vụ!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.UPDATE_FAILED);
     }
   };
 
@@ -453,12 +383,12 @@ const ServiceManagement = () => {
       setIsSearching(true);
       setSearchTerm(value);
       const results = await searchServiceByName(value.trim());
-      const searchData = Array.isArray(results) ? results : [results];
+      const searchData = toArray(results);
       setSearchResults(searchData);
     } catch (error) {
       console.error("Lỗi tìm kiếm:", error);
       setSearchResults([]);
-      message.error("Không tìm thấy dịch vụ nào!");
+      message.error(NOTIFICATION_MESSAGES.SERVICE.NOT_FOUND);
     } finally {
       setIsSearching(false);
     }
@@ -470,156 +400,21 @@ const ServiceManagement = () => {
     setSearchResults([]);
   };
 
-  // Table columns definition
-  const serviceColumns = [
-    { title: "Tên Dịch vụ", dataIndex: "name", key: "name" },
-    { title: "Mô tả", dataIndex: "description", key: "description" },
-    {
-      title: "Thời gian (phút)",
-      dataIndex: "duration",
-      key: "duration",
-      render: (duration) => {
-        try {
-          return duration ? Math.floor(duration) : "N/A";
-        } catch (error) {
-          console.error(" Error rendering duration:", error, duration);
-          return "Error";
-        }
-      },
-    },
-    {
-      title: "Loại",
-      dataIndex: "type",
-      key: "type",
-      render: (type) => (
-        <Tag color={getServiceTypeColor(type)}>{getServiceTypeLabel(type)}</Tag>
-      ),
-    },
-    {
-      title: "Chuyên khoa",
-      dataIndex: "specializations",
-      key: "specializations",
-      render: (specializations) => (
-        <div>
-          {specializations && specializations.length > 0 ? (
-            specializations.map((spec) => (
-              <Tag key={spec.id} color="blue" style={{ marginBottom: 4 }}>
-                {spec.name}
-              </Tag>
-            ))
-          ) : (
-            <span style={{ color: "#999" }}>Chưa có</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: "Giá",
-      dataIndex: "price",
-      key: "price",
-      render: (price) => {
-        try {
-          return `${price?.toLocaleString() || 0}đ`;
-        } catch (error) {
-          console.error(" Error rendering price:", error, price);
-          return "0đ";
-        }
-      },
-    },
-    {
-      title: "Giảm giá",
-      dataIndex: "discountPercent",
-      key: "discountPercent",
-      render: (discount) => `${discount || 0}%`,
-    },
-    {
-      title: "Gói Dịch vụ",
-      dataIndex: "isCombo",
-      key: "isCombo",
-      render: (isCombo) => (
-        <Tag color={isCombo ? "orange" : "default"}>
-          {isCombo ? "Có" : "Không"}
-        </Tag>
-      ),
-    },
-
-    {
-      title: "Ngày tạo",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      render: (_, record) => {
-        try {
-          // console.log(" Rendering Action for record:", record);
-
-          if (!record) {
-            console.error(" Record is null/undefined");
-            return <span>Error: No data</span>;
-          }
-
-          return (
-            <Space size="middle">
-              <Button
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => handleViewServiceDetail(record)}
-              >
-                Xem
-              </Button>
-              <Button
-                icon={<EditOutlined />}
-                size="small"
-                onClick={() => handleEditService(record)}
-              >
-                Sửa
-              </Button>
-              <Popconfirm
-                title={`Bạn có chắc muốn ${
-                  record.isActive ? "vô hiệu hóa" : "kích hoạt"
-                } dịch vụ này?`}
-                onConfirm={() => handleToggleServiceStatus(record)}
-              >
-                <Button
-                  size="small"
-                  danger={record.isActive}
-                  icon={
-                    record.isActive ? <DeleteOutlined /> : <CheckOutlined />
-                  }
-                  type={record.isActive ? "default" : "primary"}
-                >
-                  {record.isActive ? "Xóa" : "Kích hoạt"}
-                </Button>
-              </Popconfirm>
-            </Space>
-          );
-        } catch (error) {
-          console.error(" Error rendering Action column:", error, record);
-          return <span>Error</span>;
-        }
-      },
-    },
-  ];
-
-  console.log(" Rendering ServiceManagement with data:", {
-    services,
-    searchResults,
-    searchTerm,
-    servicesLength: services?.length,
-    searchResultsLength: searchResults?.length,
+  const serviceColumns = createServiceManagementColumns({
+    getServiceTypeColor,
+    onEdit: handleEditService,
+    onToggleStatus: handleToggleServiceStatus,
+    onViewDetail: handleViewServiceDetail,
   });
 
   return (
     <>
       <Card
-        title="Quản lý Dịch vụ Xét nghiệm & Giá cả"
+        title={SERVICE_MANAGEMENT_MESSAGES.ui.title}
         extra={
           <Space>
             <Input.Search
-              placeholder="Tìm kiếm dịch vụ theo tên..."
+              placeholder={SERVICE_MANAGEMENT_MESSAGES.ui.searchPlaceholder}
               allowClear
               loading={isSearching}
               onSearch={handleSearchService}
@@ -628,57 +423,46 @@ const ServiceManagement = () => {
                   handleClearSearch();
                 }
               }}
-              style={{ width: 250 }}
+              className="service-management__search"
             />
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleAddService}
             >
-              Thêm Dịch vụ
+              {SERVICE_MANAGEMENT_MESSAGES.ui.addService}
             </Button>
             <Button
               type="default"
               icon={<PlusOutlined />}
               onClick={handleAddComboService}
-              style={{
-                backgroundColor: "#52c41a",
-                borderColor: "#52c41a",
-                color: "white",
-              }}
+              className="service-management__combo-button"
             >
-              Thêm Gói Dịch vụ
+              {SERVICE_MANAGEMENT_MESSAGES.ui.addComboService}
             </Button>
           </Space>
         }
       >
         {searchTerm && (
-          <div style={{ marginBottom: 16 }}>
+          <div className="service-management__search-summary">
             <Tag color="blue">
               Kết quả tìm kiếm cho: "{searchTerm}" ({searchResults.length} tìm
               thấy)
             </Tag>
             <Button type="link" size="small" onClick={handleClearSearch}>
-              Xóa tìm kiếm
+              {SERVICE_MANAGEMENT_MESSAGES.ui.clearSearch}
             </Button>
           </div>
         )}
         <Table
           columns={serviceColumns}
           dataSource={searchTerm ? searchResults : services}
-          rowKey={(record) => {
-            // console.log(" Table rowKey record:", record);
-            return record?.id || `temp-${Math.random()}`;
-          }}
+          rowKey="id"
           locale={{
             emptyText: searchTerm
-              ? `Không tìm thấy dịch vụ nào cho "${searchTerm}"`
-              : "Không có dịch vụ nào",
+              ? SERVICE_MANAGEMENT_MESSAGES.ui.noSearchResults(searchTerm)
+              : SERVICE_MANAGEMENT_MESSAGES.ui.noServices,
           }}
-          // onRow={(record, index) => {
-          //   // console.log(" Table onRow:", { record, index });
-          //   return {};
-          // }}
         />
       </Card>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, Table, message, Spin } from "antd";
-import api from "../../../../configs/api";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getMyConsultantFeedback } from "../../../feedback/feedbackApi";
 import "./ViewFeedback.css";
 
 const ViewFeedback = () => {
@@ -11,11 +12,11 @@ const ViewFeedback = () => {
   const fetchFeedbacks = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/consultant-feedbacks/my-feedbacks");
+      const response = await getMyConsultantFeedback();
       setFeedbacks(response.data);
     } catch (error) {
       console.error("Error fetching feedbacks:", error);
-      message.error("Không thể tải danh sách phản hồi");
+      message.error(NOTIFICATION_MESSAGES.FEEDBACK.CONSULTANT_LOAD_FAILED);
     } finally {
       setLoading(false);
     }

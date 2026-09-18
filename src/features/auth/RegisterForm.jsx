@@ -11,7 +11,7 @@ import {
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/reduxStore/userSlice";
 import { toast } from "react-toastify";
-import LoginGoogle from "../../api/LoginGoogle";
+import LoginGoogle from "./GoogleLogin";
 import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
 import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
 import { ROUTES } from "../../shared/constants/routes";

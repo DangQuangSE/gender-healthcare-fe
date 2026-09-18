@@ -1,0 +1,198 @@
+/* Medical Knowledge Section */
+.medpro-all-blog-medical-knowledge-section {
+  margin-bottom: 48px;
+}
+
+.medpro-all-blog-knowledge-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.medpro-all-blog-knowledge-featured {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.medpro-all-blog-knowledge-featured-image {
+  position: relative;
+  height: 320px;
+}
+
+.medpro-all-blog-knowledge-bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.medpro-all-blog-knowledge-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  color: white;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.medpro-all-blog-knowledge-category {
+  color: #06b6d4;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.medpro-all-blog-knowledge-featured-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0 0 10px 0;
+  line-height: 1.3;
+}
+
+.medpro-all-blog-knowledge-featured-excerpt {
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0 0 14px 0;
+  opacity: 0.9;
+}
+
+.medpro-all-blog-knowledge-link {
+  color: #06b6d4;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Knowledge Cards */
+.medpro-all-blog-knowledge-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.medpro-all-blog-knowledge-card {
+  background: #e0f2fe;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.medpro-all-blog-knowledge-card:hover {
+  transform: translateY(-2px);
+}
+
+.medpro-all-blog-knowledge-card-category {
+  color: #06b6d4;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.medpro-all-blog-knowledge-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 10px 0;
+  line-height: 1.3;
+}
+
+.medpro-all-blog-knowledge-card-excerpt {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* View All Button */
+.medpro-all-blog-view-all-section {
+  text-align: center;
+}
+
+.medpro-all-blog-view-all-btn {
+  background: #06b6d4;
+  color: white;
+  text-decoration: none;
+  padding: 12px 32px;
+  border-radius: 25px;
+  font-weight: 500;
+  display: inline-block;
+  transition: background-color 0.2s;
+}
+
+.medpro-all-blog-view-all-btn:hover {
+  background: #0891b2;
+}
+
+/* Page Title Section */
+.medpro-all-blog-page-title-section {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  padding: 40px 0;
+  margin-bottom: 40px;
+}
+
+.medpro-all-blog-page-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: white;
+  text-align: center;
+  margin: 0 0 12px 0;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.medpro-all-blog-page-subtitle {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  margin: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+/* Responsive for Page Title */
+@media (max-width: 768px) {
+  .medpro-all-blog-page-title-section {
+    padding: 30px 0;
+    margin-bottom: 30px;
+  }
+
+  .medpro-all-blog-page-title {
+    font-size: 36px;
+    letter-spacing: 1px;
+  }
+
+  .medpro-all-blog-page-subtitle {
+    font-size: 16px;
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .medpro-all-blog-page-title {
+    font-size: 28px;
+  }
+
+  .medpro-all-blog-page-subtitle {
+    font-size: 14px;
+  }
+}

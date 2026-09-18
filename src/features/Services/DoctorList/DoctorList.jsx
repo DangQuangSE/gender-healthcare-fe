@@ -1,279 +1,119 @@
-import React, { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button, message } from "antd";
-import api from "../../../configs/api.js";
+import { getApiErrorMessage } from "../../../shared/api/errors";
+import { getConsultants } from "../../catalog/catalogApi";
+import { DOCTOR_MESSAGES } from "./doctorMessages";
+import { DOCTORS_PER_PAGE } from "./DoctorList.constants";
 import "./DoctorList.css";
 
 const DoctorList = () => {
   const [consultants, setConsultants] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Function để gọi POST API /api/consultants
-  const createConsultant = async (consultantData) => {
+  const fetchConsultants = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      console.log(
-        "[DEBUG] Calling POST /api/consultants with data:",
-        consultantData
-      );
-
-      const response = await api.post("/api/consultants", consultantData);
-
-      console.log("[DEBUG] POST /api/consultants response:", response.data);
-      message.success("Tạo bác sĩ thành công!");
-
-      // Refresh danh sách sau khi tạo thành công
-      fetchConsultants();
-
-      return response.data;
+      const response = await getConsultants();
+      setConsultants(Array.isArray(response.data) ? response.data : []);
+      setCurrentPage(1);
     } catch (error) {
-      console.error("[ERROR] POST /api/consultants failed:", error);
-      message.error(
-        "Tạo bác sĩ thất bại: " +
-          (error.response?.data?.message || error.message)
-      );
-      throw error;
+      setConsultants([]);
+      message.error(getApiErrorMessage(error, DOCTOR_MESSAGES.LOAD_FAILED));
     } finally {
       setLoading(false);
     }
-  };
-
-  // Function để lấy danh sách consultants (GET)
-  const fetchConsultants = async () => {
-    try {
-      const response = await api.get("/admin/users?role=CONSULTANT");
-      console.log("[DEBUG] Fetched consultants:", response.data);
-      setConsultants(response.data || []);
-    } catch (error) {
-      console.error("[ERROR] Failed to fetch consultants:", error);
-      message.error("Lấy danh sách bác sĩ thất bại");
-    }
-  };
-
-  // Load danh sách consultants khi component mount
-  useEffect(() => {
-    fetchConsultants();
   }, []);
 
-  // Test function để tạo consultant mẫu
-  const handleCreateTestConsultant = () => {
-    const testConsultantData = {
-      fullname: "BS. Test Doctor",
-      email: "test.doctor@example.com",
-      phone: "0123456789",
-      specialization: "Nội khoa",
-      experience: "5 năm kinh nghiệm",
-      description: "Bác sĩ chuyên khoa nội với nhiều năm kinh nghiệm",
-      role: "CONSULTANT",
-    };
+  useEffect(() => {
+    fetchConsultants();
+  }, [fetchConsultants]);
 
-    createConsultant(testConsultantData);
-  };
+  const totalPages = Math.ceil(consultants.length / DOCTORS_PER_PAGE);
+  const startIndex = (currentPage - 1) * DOCTORS_PER_PAGE;
+  const currentConsultants = consultants.slice(
+    startIndex,
+    startIndex + DOCTORS_PER_PAGE
+  );
 
-  const doctors = [
-    {
-      id: 1,
-      name: "BS. Nguyễn Văn A",
-      image:
-        "https://i.pinimg.com/736x/37/8b/54/378b5429a928e610c211eaa96af003ce.jpg",
-      experience: "10 năm kinh nghiệm",
-      specialties: ["Sản phụ khoa"],
-      workplace: "BV Phụ sản Quốc tế",
-    },
-    {
-      id: 2,
-      name: "BS. Trần Thị B",
-      image:
-        "https://i.pinimg.com/736x/4c/35/0e/4c350ec37fc1ddd6c62ddf65dc5255ea.jpg",
-      experience: "8 năm kinh nghiệm",
-      specialties: ["Nam khoa", "Tư vấn giới tính"],
-      workplace: "BV Đại học Y",
-    },
-    {
-      id: 3,
-      name: "BS. Lê Văn C",
-      image:
-        "https://i.pinimg.com/736x/91/04/05/910405ee7040a817b3f43223412e08b4.jpg",
-      experience: "15 năm kinh nghiệm",
-      specialties: ["Nhi khoa", "Dị ứng"],
-      workplace: "BV Nhi Đồng",
-    },
-    {
-      id: 4,
-      name: "BS. Phạm Thị D",
-      image:
-        "https://i.pinimg.com/736x/e7/b2/2c/e7b22c1f928c1d06d00dc1c887ef9918.jpg",
-      experience: "12 năm kinh nghiệm",
-      specialties: ["Da liễu"],
-      workplace: "BV Da liễu Trung ương",
-    },
-    {
-      id: 5,
-      name: "BS. Trần Thị H",
-      image:
-        "https://i.pinimg.com/736x/6a/bf/2b/6abf2b327e6093e100127b0abf8acd28.jpg",
-      experience: "13 năm kinh nghiệm",
-      specialties: ["Ngoại khoa"],
-      workplace: "BV Quân Y",
-    },
-    {
-      id: 6,
-      name: "BS. Nguyễn Văn V",
-      image:
-        "https://i.pinimg.com/736x/aa/14/ec/aa14ec594fc216764d67d696067a913e.jpg",
-      experience: "20 năm kinh nghiệm",
-      specialties: ["Tim mạch"],
-      workplace: "BV Đại học Y",
-    },
-    {
-      id: 7,
-      name: "BS. Nguyễn Văn A",
-      image:
-        "https://i.pinimg.com/736x/37/8b/54/378b5429a928e610c211eaa96af003ce.jpg",
-      experience: "10 năm kinh nghiệm",
-      specialties: ["Sản phụ khoa"],
-      workplace: "BV Phụ sản Quốc tế",
-    },
-    {
-      id: 8,
-      name: "BS. Trần Thị B",
-      image:
-        "https://i.pinimg.com/736x/4c/35/0e/4c350ec37fc1ddd6c62ddf65dc5255ea.jpg",
-      experience: "8 năm kinh nghiệm",
-      specialties: ["Nam khoa", "Tư vấn giới tính"],
-      workplace: "BV Đại học Y",
-    },
-    {
-      id: 9,
-      name: "BS. Lê Văn C",
-      image:
-        "https://i.pinimg.com/736x/91/04/05/910405ee7040a817b3f43223412e08b4.jpg",
-      experience: "15 năm kinh nghiệm",
-      specialties: ["Nhi khoa", "Dị ứng"],
-      workplace: "BV Nhi Đồng",
-    },
-    {
-      id: 10,
-      name: "BS. Phạm Thị D",
-      image:
-        "https://i.pinimg.com/736x/e7/b2/2c/e7b22c1f928c1d06d00dc1c887ef9918.jpg",
-      experience: "12 năm kinh nghiệm",
-      specialties: ["Da liễu"],
-      workplace: "BV Da liễu Trung ương",
-    },
-    {
-      id: 11,
-      name: "BS. Trần Thị H",
-      image:
-        "https://i.pinimg.com/736x/6a/bf/2b/6abf2b327e6093e100127b0abf8acd28.jpg",
-      experience: "13 năm kinh nghiệm",
-      specialties: ["Ngoại khoa"],
-      workplace: "BV Quân Y",
-    },
-  ];
-  const [currentPage, setCurrentPage] = useState(1);
-  const doctorsPerPage = 6;
-  const indexOfLastDoctor = currentPage * doctorsPerPage;
-  const indexOfFirstDoctor = indexOfLastDoctor - doctorsPerPage;
-  const currentDoctors = doctors.slice(indexOfFirstDoctor, indexOfLastDoctor);
-  const totalPages = Math.ceil(doctors.length / doctorsPerPage);
-
-  const handlePageChange = (pageNumber) => {
-    if (pageNumber < 1 || pageNumber > totalPages) return;
-    setCurrentPage(pageNumber);
-  };
   return (
-    <>
-      {/* Test button để gọi POST API */}
+    <section aria-busy={loading}>
       <div style={{ marginBottom: "20px", textAlign: "center" }}>
-        <Button
-          type="primary"
-          onClick={handleCreateTestConsultant}
-          loading={loading}
-          style={{ marginRight: "10px" }}
-        >
-          Test POST /api/consultants
+        <Button onClick={fetchConsultants} loading={loading}>
+          {DOCTOR_MESSAGES.REFRESH}
         </Button>
-        <Button onClick={fetchConsultants}>Refresh Consultants List</Button>
       </div>
 
-      {/* Hiển thị danh sách consultants từ API */}
-      {consultants.length > 0 && (
-        <div style={{ marginBottom: "30px" }}>
-          <h3>Danh sách Bác sĩ từ API ({consultants.length}):</h3>
-          <div className="api-consultants-list">
-            {consultants.map((consultant) => (
-              <div key={consultant.id} className="api-consultant-card">
-                <h4>{consultant.fullname || "Chưa có tên"}</h4>
-                <p>
-                  <strong>Chuyên khoa:</strong>{" "}
-                  {consultant.specialization || "Chưa có"}
+      {currentConsultants.length === 0 && !loading ? (
+        <p>{DOCTOR_MESSAGES.EMPTY}</p>
+      ) : (
+        <div className="doctor-list-container">
+          {currentConsultants.map((consultant) => (
+            <article key={consultant.id} className="doctor-card">
+              {consultant.imageUrl ? (
+                <img
+                  src={consultant.imageUrl}
+                  alt={consultant.fullname || DOCTOR_MESSAGES.UNKNOWN_NAME}
+                  className="doctor-image"
+                />
+              ) : (
+                <div className="doctor-image" aria-hidden="true" />
+              )}
+              <div className="doctor-info">
+                <h3 className="doctor-name">
+                  {consultant.fullname || DOCTOR_MESSAGES.UNKNOWN_NAME}
+                </h3>
+                <p className="doctor-specialty">
+                  {consultant.specializationNames?.join(", ") ||
+                    DOCTOR_MESSAGES.NO_SPECIALIZATION}
                 </p>
-                <p>
-                  <strong>Email:</strong> {consultant.email}
-                </p>
-                <p>
-                  <strong>ID:</strong> {consultant.id}
+                <p className="doctor-experience">
+                  {consultant.email || DOCTOR_MESSAGES.NO_EMAIL}
                 </p>
               </div>
-            ))}
-          </div>
+            </article>
+          ))}
         </div>
       )}
-
-      <div className="doctor-list-container">
-        {currentDoctors.map((doctor) => (
-          <div key={doctor.id} className="doctor-card">
-            <img
-              src={doctor.image}
-              alt={doctor.name}
-              className="doctor-image"
-            />
-            <div className="doctor-info">
-              <div>
-                <h3 className="doctor-name">{doctor.name}</h3>
-                <p className="doctor-specialty">
-                  {doctor.specialties.join(", ")}
-                </p>
-                <p className="doctor-experience">{doctor.experience}</p>
-                <p className="doctor-workplace">{doctor.workplace}</p>
-              </div>
-              <button className="book-appointment-btn">Đặt lịch hẹn</button>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {totalPages > 1 && (
-        <div className="pagination">
-          {/* Nút Previous (Lùi) */}
+        <div className="pagination" aria-label={DOCTOR_MESSAGES.PAGINATION}>
           <button
-            onClick={() => handlePageChange(currentPage - 1)}
+            type="button"
+            onClick={() => setCurrentPage((page) => page - 1)}
             disabled={currentPage === 1}
             className="pagination-arrow"
-          ></button>
-
-          {/* Các nút số trang */}
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => handlePageChange(i + 1)}
-              className={`pagination-number ${
-                currentPage === i + 1 ? "active" : ""
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-
-          {/* Nút Next (Tới) */}
+            aria-label={DOCTOR_MESSAGES.PREVIOUS}
+          >
+            &lt;
+          </button>
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (page) => (
+              <button
+                type="button"
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`pagination-number ${
+                  currentPage === page ? "active" : ""
+                }`}
+                aria-current={currentPage === page ? "page" : undefined}
+              >
+                {page}
+              </button>
+            )
+          )}
           <button
-            onClick={() => handlePageChange(currentPage + 1)}
+            type="button"
+            onClick={() => setCurrentPage((page) => page + 1)}
             disabled={currentPage === totalPages}
             className="pagination-arrow"
-          ></button>
+            aria-label={DOCTOR_MESSAGES.NEXT}
+          >
+            &gt;
+          </button>
         </div>
       )}
-    </>
+    </section>
   );
 };
 

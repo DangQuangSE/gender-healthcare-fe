@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Rate, Input, Button, message, Spin } from 'antd';
-import api from '../../configs/api';
+import NOTIFICATION_MESSAGES from '../../shared/constants/notificationMessages';
+import {
+  createServiceFeedback,
+  getAppointmentFeedback,
+  markAppointmentRated,
+  updateServiceFeedback,
+} from '../../features/feedback/feedbackApi';
 import './RatingModal.css';
 
 const { TextArea } = Input;
@@ -20,8 +26,7 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
         try {
           setLoading(true);
           // Fetch service feedback
-          const feedbackRes = await api.get(`/feedback/appointment/${appointment.id}`);
-          console.log("Raw feedback data:", feedbackRes.data);
+          const feedbackRes = await getAppointmentFeedback(appointment.id);
 
           // Xử lý dữ liệu trả về có thể là array hoặc object
           const feedbackData = Array.isArray(feedbackRes.data)
@@ -29,26 +34,19 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
             : feedbackRes.data;
 
           if (!feedbackData) {
-            throw new Error("Không tìm thấy đánh giá");
+            throw new Error(NOTIFICATION_MESSAGES.RATING.NO_EXISTING_RATING);
           }
 
-          console.log("Processed feedback data:", feedbackData);
           setPreviousRating(feedbackData);
 
           // Lấy thông tin đánh giá bác sĩ từ consultantFeedbacks nếu có
-          let consultantRating = 0;
           let consultantComment = "";
 
           if (feedbackData.consultantFeedbacks &&
             feedbackData.consultantFeedbacks.length > 0) {
             const consultantFeedback = feedbackData.consultantFeedbacks[0];
-            consultantRating = consultantFeedback.rating || 0;
             consultantComment = consultantFeedback.comment || "";
 
-            console.log("Found consultant feedback:", {
-              rating: consultantRating,
-              comment: consultantComment
-            });
           }
 
           // Set form values với cấu trúc mới
@@ -58,14 +56,9 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
             serviceCommentConsultant: consultantComment
           });
 
-          console.log("Set form values:", {
-            serviceRating: feedbackData.rating || 0,
-            serviceComment: feedbackData.comment || "",
-            commentConsultant: consultantComment
-          });
         } catch (error) {
           console.error("Lỗi khi lấy đánh giá cũ:", error);
-          message.error("Không thể tải đánh giá cũ");
+          message.error(NOTIFICATION_MESSAGES.RATING.LOAD_FAILED);
         } finally {
           setLoading(false);
         }
@@ -85,39 +78,31 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
       const values = await form.validateFields();
 
       try {
-        const consultantId = appointment.appointmentDetails?.[0]?.consultantId;
-
         if (appointment.isRated && previousRating) {
           // Update existing rating
-          await api.put(`/feedback/${previousRating.id}`, {
+          await updateServiceFeedback(previousRating.id, {
             rating: values.serviceRating,
             comment: values.serviceComment || "",
-            consultantRating: values.consultantRating || 0,
-            commentConsultant: values.serviceCommentConsultant || ""
+            commentConsultant: values.serviceCommentConsultant || "",
+            appointmentId: appointment.id,
           });
 
-          message.success("Đã cập nhật đánh giá thành công!");
+          message.success(NOTIFICATION_MESSAGES.RATING.UPDATE_SUCCESS);
         } else {
           // Create new rating
-          const consultantId = appointment.appointmentDetails?.[0]?.consultantId;
-
-          await api.post('/feedback', {
+          await createServiceFeedback({
             appointmentId: appointment.id,
             rating: values.serviceRating,
             comment: values.serviceComment || "",
             commentConsultant: values.serviceCommentConsultant || "",
-            consultantRating: values.consultantRating || 0,
-            consultantComment: values.consultantComment || "",
-            consultantId: consultantId
           });
 
           // Update appointment isRated status using the specific API endpoint
           if (!appointment.isRated) {
-            await api.put(`/appointment/${appointment.id}/rate`);
-            console.log("Appointment marked as rated");
+            await markAppointmentRated(appointment.id);
           }
 
-          message.success("Cảm ơn bạn đã đánh giá!");
+          message.success(NOTIFICATION_MESSAGES.RATING.CREATE_SUCCESS);
         }
 
         // Call success callback
@@ -129,13 +114,15 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
         onClose();
       } catch (error) {
         console.error("Lỗi khi gửi đánh giá:", error);
-        message.error("Có lỗi xảy ra khi gửi đánh giá: " +
-          (error.response?.data?.message || error.message));
+          message.error(
+            NOTIFICATION_MESSAGES.RATING.SUBMIT_FAILED(
+              error.response?.data?.message || error.message
+            )
+          );
       } finally {
         setSubmitting(false);
       }
-    } catch (validationError) {
-      console.log("Lỗi validation:", validationError);
+    } catch {
       setSubmitting(false);
     }
   };
@@ -143,16 +130,14 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
   // If no appointment is selected, don't render
   if (!appointment) return null;
 
-  const consultantName = appointment.appointmentDetails?.[0]?.consultantName;
-
   return (
     <Modal
-      title="Đánh giá dịch vụ"
+      title={NOTIFICATION_MESSAGES.RATING.TITLE}
       open={visible}
       onCancel={onClose}
       footer={[
         <Button key="cancel" onClick={onClose}>
-          Hủy
+          {NOTIFICATION_MESSAGES.RATING.CANCEL}
         </Button>,
         <Button
           key="submit"
@@ -160,36 +145,49 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
           onClick={handleSubmit}
           loading={submitting}
         >
-          Gửi đánh giá
+          {NOTIFICATION_MESSAGES.RATING.SUBMIT}
         </Button>
       ]}
       width={500}
     >
       {loading ? (
         <div className="rating-loading">
-          <Spin /> Đang tải dữ liệu đánh giá...
+          <Spin /> {NOTIFICATION_MESSAGES.RATING.LOADING}
         </div>
       ) : (
         <Form form={form} layout="vertical">
           <p className="service-name">
-            Vui lòng đánh giá trải nghiệm của bạn với dịch vụ <strong>{appointment.serviceName}</strong>:
+            {NOTIFICATION_MESSAGES.RATING.EXPERIENCE_PROMPT(
+              appointment.serviceName
+            )}
           </p>
 
           <Form.Item
             name="serviceRating"
-            label={<span className="required-label">Đánh giá dịch vụ</span>}
-            rules={[{ required: true, message: 'Vui lòng đánh giá dịch vụ' }]}
+            label={
+              <span className="required-label">
+                {NOTIFICATION_MESSAGES.RATING.SERVICE_LABEL}
+              </span>
+            }
+            rules={[
+              {
+                required: true,
+                message: NOTIFICATION_MESSAGES.RATING.SERVICE_REQUIRED,
+              },
+            ]}
           >
             <Rate allowHalf />
           </Form.Item>
 
           <Form.Item
             name="serviceComment"
-            label="Nhận xét về dịch vụ"
+            label={NOTIFICATION_MESSAGES.RATING.SERVICE_COMMENT_LABEL}
           >
             <TextArea
               rows={4}
-              placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ..."
+              placeholder={
+                NOTIFICATION_MESSAGES.RATING.SERVICE_COMMENT_PLACEHOLDER
+              }
               maxLength={500}
               showCount
             />
@@ -197,11 +195,13 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
 
           <Form.Item
             name="serviceCommentConsultant"
-            label="Nhận xét về bác sĩ"
+            label={NOTIFICATION_MESSAGES.RATING.CONSULTANT_COMMENT_LABEL}
           >
             <TextArea
               rows={4}
-              placeholder="Chia sẻ trải nghiệm của bạn về bác sĩ..."
+              placeholder={
+                NOTIFICATION_MESSAGES.RATING.CONSULTANT_COMMENT_PLACEHOLDER
+              }
               maxLength={500}
               showCount
             />

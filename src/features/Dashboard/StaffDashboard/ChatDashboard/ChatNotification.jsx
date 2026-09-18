@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { notification, Avatar, Button, Space, Typography } from "antd";
 import {
   MessageOutlined,
@@ -267,8 +267,4 @@ class ChatNotificationService {
   }
 }
 
-// Export singleton instance
-export const chatNotificationService = new ChatNotificationService();
-
-// Export component (nếu cần)
 export default ChatNotificationService;

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import api from "../../configs/api";
-import authStorage from "../../shared/storage/authStorage";
 import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
+import { createComment } from "../../features/blog/api/commentApi";
 const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -22,18 +21,12 @@ const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
 
     try {
       setSubmitting(true);
-      const token = authStorage.getToken();
-      if (!token) {
-        toast.error(CONTENT_MESSAGES.LOGIN_REQUIRED);
-        return;
-      }
-
       const requestBody = {
         blogId: parseInt(blogId),
         description: content.trim(),
       };
 
-      const response = await api.post("/comment", requestBody);
+      const response = await createComment(requestBody);
       const newComment = response.data;
 
       // Transform the response to match our comment structure

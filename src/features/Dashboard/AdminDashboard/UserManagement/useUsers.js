@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { message } from "antd";
-import { fetchUsers, addUser, updateUser, deleteUser } from "./userAPI";
+import {
+  fetchUsers,
+  addUser,
+  updateUser,
+  deleteUser,
+} from "../../../admin/api/userApi";
 import dayjs from "dayjs";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 /**
  * Custom hook for managing Users
@@ -26,7 +32,7 @@ export const useUsers = () => {
       setUsers(data);
     } catch (error) {
       console.error("Error loading users:", error);
-      message.error("Không thể tải danh sách người dùng!");
+      message.error(NOTIFICATION_MESSAGES.USER_MANAGEMENT.LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -62,11 +68,11 @@ export const useUsers = () => {
       if (editingUser) {
         // Update existing user
         await updateUser(editingUser.id, userData);
-        message.success("Cập nhật người dùng thành công!");
+        message.success(NOTIFICATION_MESSAGES.USER_MANAGEMENT.UPDATE_SUCCESS);
       } else {
         // Add new user
         await addUser(userData);
-        message.success("Thêm người dùng thành công!");
+        message.success(NOTIFICATION_MESSAGES.USER_MANAGEMENT.CREATE_SUCCESS);
       }
 
       // Close modal and reset form
@@ -78,7 +84,7 @@ export const useUsers = () => {
       await loadUsers();
     } catch (error) {
       console.error("Lỗi cập nhật người dùng:", error);
-      message.error("Có lỗi xảy ra khi xử lý người dùng!");
+      message.error(NOTIFICATION_MESSAGES.USER_MANAGEMENT.SAVE_FAILED);
     }
   };
 
@@ -86,11 +92,11 @@ export const useUsers = () => {
   const handleDeleteUser = async (id) => {
     try {
       await deleteUser(id);
-      message.success("Xóa người dùng thành công!");
+      message.success(NOTIFICATION_MESSAGES.USER_MANAGEMENT.DELETE_SUCCESS);
       await loadUsers();
     } catch (error) {
       console.error("Lỗi xóa người dùng:", error);
-      message.error("Có lỗi xảy ra khi xóa người dùng!");
+      message.error(NOTIFICATION_MESSAGES.USER_MANAGEMENT.DELETE_FAILED);
     }
   };
 

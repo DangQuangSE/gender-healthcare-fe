@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { BASE_URL } from "./src/configs/serverConfig";
+import { BASE_URL } from "./src/shared/config/env";
 
 // https://vite.dev/config/
 export default defineConfig({

@@ -24,9 +24,13 @@ import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 // import locale from "antd/es/date-picker/locale/vi_VN";
-import { submitLabTestResult } from "../../api/medicalResultAPI";
+import { submitLabTestResult } from "../../features/medical/medicalResultApi";
 import "./MedicalResultFormTesting.css";
-import api from "../../configs/api";
+import { getTreatmentProtocols } from "../../features/medical/medicalApi";
+import {
+  MEDICAL_RESULT_MESSAGES,
+} from "../../features/medical/medicalResultMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 
 dayjs.extend(customParseFormat);
 dayjs.locale("vi");
@@ -55,10 +59,9 @@ const MedicalResultFormTesting = ({
   const fetchTreatmentProtocols = async () => {
     try {
       setLoadingProtocols(true);
-      const response = await api.get("/treatment");
+      const response = await getTreatmentProtocols();
       setTreatmentProtocols(response.data || []);
-    } catch (error) {
-      console.error("Error fetching treatment protocols:", error);
+    } catch {
       setTreatmentProtocols([]);
     } finally {
       setLoadingProtocols(false);
@@ -86,12 +89,10 @@ const MedicalResultFormTesting = ({
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
-      console.log("[DEBUG] Submitting testing form data:", values);
-
       // Convert dayjs to ISO string
       const submitData = {
         ...values,
-        appointmentDetailId: appointmentDetail?.id || 123,
+        appointmentDetailId: appointmentDetail?.id,
         resultType: "LAB_TEST",
         sampleCollectedAt: values.sampleCollectedAt
           ? dayjs(values.sampleCollectedAt).toISOString()
@@ -99,26 +100,16 @@ const MedicalResultFormTesting = ({
         treatmentProtocolId: values.treatmentProtocolId || null,
       };
 
-      console.log("[DEBUG] Final submit data:", submitData);
-
-      // Call API /api/result/lab-test
       const response = await submitLabTestResult(submitData);
-      message.success("Lưu kết quả xét nghiệm thành công!");
+      message.success(MEDICAL_RESULT_MESSAGES.LAB_SAVE_SUCCESS);
       onSuccess?.(response.data);
     } catch (error) {
-      console.error("[ERROR] Submit failed:", error);
-      console.error("[ERROR] Error details:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
+      const errorMessage = getApiErrorMessage(
+        error,
+        MEDICAL_RESULT_MESSAGES.LAB_SAVE_ERROR_FALLBACK
+      );
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Có lỗi xảy ra khi lưu kết quả xét nghiệm";
-
-      message.error("Lưu kết quả thất bại: " + errorMessage);
+      message.error(MEDICAL_RESULT_MESSAGES.SAVE_FAILED(errorMessage));
     } finally {
       setLoading(false);
     }
@@ -126,7 +117,7 @@ const MedicalResultFormTesting = ({
 
   const handleReset = () => {
     form.resetFields();
-    message.info("Đã reset form");
+    message.info(MEDICAL_RESULT_MESSAGES.FORM_RESET);
   };
 
   return (
@@ -183,9 +174,8 @@ const MedicalResultFormTesting = ({
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
-        onFinishFailed={(errorInfo) => {
-          console.log("[DEBUG] Form validation failed:", errorInfo);
-          message.error("Vui lòng kiểm tra lại thông tin đã nhập!");
+        onFinishFailed={() => {
+          message.error(MEDICAL_RESULT_MESSAGES.FORM_VALIDATION_FAILED);
         }}
       >
         <Row gutter={24}>
@@ -202,7 +192,8 @@ const MedicalResultFormTesting = ({
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng nhập tên xét nghiệm!",
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.TEST_NAME_REQUIRED,
                   },
                 ]}
               >
@@ -213,7 +204,10 @@ const MedicalResultFormTesting = ({
                 name="testMethod"
                 label="Phương pháp xét nghiệm"
                 rules={[
-                  { required: true, message: "Vui lòng chọn phương pháp!" },
+                  {
+                    required: true,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.TEST_METHOD_REQUIRED,
+                  },
                 ]}
               >
                 <Select placeholder="Chọn phương pháp">
@@ -228,7 +222,13 @@ const MedicalResultFormTesting = ({
               <Form.Item
                 name="specimenType"
                 label="Loại mẫu bệnh phẩm"
-                rules={[{ required: true, message: "Vui lòng chọn loại mẫu!" }]}
+                rules={[
+                  {
+                    required: true,
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.SPECIMEN_TYPE_REQUIRED,
+                  },
+                ]}
               >
                 <Select placeholder="Chọn loại mẫu">
                   <Option value="Blood">Máu</Option>
@@ -245,7 +245,8 @@ const MedicalResultFormTesting = ({
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng chọn thời gian lấy mẫu!",
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.SAMPLE_TIME_REQUIRED,
                   },
                   {
                     validator: (_, value) => {
@@ -288,7 +289,12 @@ const MedicalResultFormTesting = ({
               <Form.Item
                 name="testResult"
                 label="Kết quả"
-                rules={[{ required: true, message: "Vui lòng nhập kết quả!" }]}
+                rules={[
+                  {
+                    required: true,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.TEST_RESULT_REQUIRED,
+                  },
+                ]}
               >
                 <Input placeholder="Ví dụ: Non-reactive" />
               </Form.Item>
@@ -299,7 +305,8 @@ const MedicalResultFormTesting = ({
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng nhập giá trị tham chiếu!",
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.NORMAL_RANGE_REQUIRED,
                   },
                 ]}
               >
@@ -310,7 +317,10 @@ const MedicalResultFormTesting = ({
                 name="testStatus"
                 label="Trạng thái kết quả"
                 rules={[
-                  { required: true, message: "Vui lòng chọn trạng thái!" },
+                  {
+                    required: true,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.TEST_STATUS_REQUIRED,
+                  },
                 ]}
               >
                 <Select placeholder="Chọn trạng thái">
@@ -345,8 +355,15 @@ const MedicalResultFormTesting = ({
                 name="description"
                 label="Mô tả triệu chứng"
                 rules={[
-                  { required: true, message: "Vui lòng nhập mô tả!" },
-                  { min: 10, message: "Mô tả phải có ít nhất 10 ký tự!" },
+                  {
+                    required: true,
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.DESCRIPTION_REQUIRED,
+                  },
+                  {
+                    min: 10,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.DESCRIPTION_MIN,
+                  },
                 ]}
               >
                 <TextArea
@@ -361,8 +378,14 @@ const MedicalResultFormTesting = ({
                 name="diagnosis"
                 label="Chẩn đoán"
                 rules={[
-                  { required: true, message: "Vui lòng nhập chẩn đoán!" },
-                  { min: 10, message: "Chẩn đoán phải có ít nhất 10 ký tự!" },
+                  {
+                    required: true,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.DIAGNOSIS_REQUIRED,
+                  },
+                  {
+                    min: 10,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.DIAGNOSIS_MIN,
+                  },
                 ]}
               >
                 <TextArea
@@ -379,11 +402,12 @@ const MedicalResultFormTesting = ({
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng nhập kế hoạch điều trị!",
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.TREATMENT_PLAN_REQUIRED,
                   },
                   {
                     min: 10,
-                    message: "Kế hoạch điều trị phải có ít nhất 10 ký tự!",
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.TREATMENT_PLAN_MIN,
                   },
                 ]}
               >

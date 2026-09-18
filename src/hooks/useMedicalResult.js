@@ -4,7 +4,8 @@ import {
   submitMedicalResult,
   validateMedicalResultData,
   formatMedicalResultForAPI,
-} from "../api/medicalResultAPI";
+} from "../features/medical/medicalResultApi";
+import { MEDICAL_RESULT_MESSAGES } from "../features/medical/medicalResultMessages";
 
 /**
  * Custom hook for managing medical result operations
@@ -33,8 +34,6 @@ export const useMedicalResult = (options = {}) => {
         setErrors({});
         setWarnings({});
 
-        console.log("[HOOK] Starting medical result submission:", formData);
-
         // Validate data
         const validation = validateMedicalResultData(formData);
 
@@ -43,7 +42,7 @@ export const useMedicalResult = (options = {}) => {
           setWarnings(validation.warnings);
 
           const errorMessages = Object.values(validation.errors);
-          toast.error(`Dữ liệu không hợp lệ: ${errorMessages.join(", ")}`);
+          toast.error(MEDICAL_RESULT_MESSAGES.INVALID_DATA(errorMessages));
 
           return {
             success: false,
@@ -56,27 +55,20 @@ export const useMedicalResult = (options = {}) => {
         if (Object.keys(validation.warnings).length > 0) {
           setWarnings(validation.warnings);
           const warningMessages = Object.values(validation.warnings);
-          toast.warning(`Lưu ý: ${warningMessages.join(", ")}`);
+          toast.warning(MEDICAL_RESULT_MESSAGES.WARNING(warningMessages));
         }
 
         // Format data for API
         const apiData = formatMedicalResultForAPI(formData);
 
-        console.log(" [HOOK] Formatted data for API:", apiData);
-
         // Submit to API
         const response = await submitMedicalResult(apiData);
-
-        console.log(
-          " [HOOK] Medical result submitted successfully:",
-          response.data
-        );
 
         // Update state
         setLastSubmittedResult(response.data);
 
         // Show success message
-        toast.success("Đã lưu kết quả khám thành công!");
+        toast.success(MEDICAL_RESULT_MESSAGES.SAVE_SUCCESS);
 
         // Call success callback
         if (onSuccess) {
@@ -88,18 +80,16 @@ export const useMedicalResult = (options = {}) => {
           data: response.data,
         };
       } catch (error) {
-        console.error(" [HOOK] Error submitting medical result:", error);
-
         const errorMessage =
           error.response?.data?.message ||
           error.message ||
-          "Có lỗi xảy ra khi lưu kết quả khám";
+          MEDICAL_RESULT_MESSAGES.SAVE_ERROR_FALLBACK;
 
         setErrors({
           submit: errorMessage,
         });
 
-        toast.error(`Lỗi: ${errorMessage}`);
+        toast.error(MEDICAL_RESULT_MESSAGES.ERROR(errorMessage));
 
         // Call error callback
         if (onError) {

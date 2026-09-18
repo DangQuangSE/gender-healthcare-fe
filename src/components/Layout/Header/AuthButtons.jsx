@@ -11,10 +11,14 @@ import {
 import { Avatar, Dropdown, Badge, Calendar } from "antd";
 import { logout } from "../../../redux/reduxStore/userSlice.js";
 import { useNavigate } from "react-router-dom";
-import api from "../../../configs/api";
 import authStorage from "../../../shared/storage/authStorage";
 import bookingStorage from "../../../shared/storage/bookingStorage";
 import NotificationDropdown from "./Notification.jsx";
+import {
+  deleteNotification,
+  getNotifications,
+  markNotificationAsRead,
+} from "../../../features/notifications/notificationApi";
 
 const AuthButtons = () => {
   const [open, setOpen] = useState(false);
@@ -72,22 +76,10 @@ const AuthButtons = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/notifications");
+      const response = await getNotifications();
       setNotifications(response.data || []);
     } catch {
-      // Nếu API lỗi, sử dụng dữ liệu mẫu
-      setNotifications([
-        {
-          id: 1,
-          message: "Bạn có lịch hẹn mới",
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          message: "Kết quả xét nghiệm đã có",
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -97,7 +89,7 @@ const AuthButtons = () => {
     try {
       // Nếu thông báo chưa đọc, gọi API đánh dấu đã đọc
       if (!notification.isRead) {
-        await api.patch(`/notifications/${notification.id}/read`);
+        await markNotificationAsRead(notification.id);
 
         // Cập nhật state để hiển thị thông báo đã đọc
         setNotifications((prevNotifications) =>
@@ -117,6 +109,13 @@ const AuthButtons = () => {
       setShowNotifications(false);
       navigate("/user/booking");
     }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    await deleteNotification(notificationId);
+    setNotifications((previousNotifications) =>
+      previousNotifications.filter((item) => item.id !== notificationId)
+    );
   };
 
   useEffect(() => {
@@ -149,6 +148,7 @@ const AuthButtons = () => {
             show={showNotifications}
             toggle={toggleNotifications}
             onClickNotification={handleNotificationClick}
+            onDeleteNotification={handleDeleteNotification}
           />
           {/* User dropdown */}
           <Dropdown menu={{ items }} trigger={["click"]}>

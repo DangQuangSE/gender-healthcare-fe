@@ -1,22 +1,10 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import api from "../../shared/api/httpClient";
-
-const DEFAULT_USER = {
-  fullname: "",
-  email: "",
-  role: "",
-  imageUrl: "",
-};
+import { createSlice } from "@reduxjs/toolkit";
+import { DEFAULT_USER } from "./userSlice.constants";
 
 const initialState = {
   user: DEFAULT_USER,
   token: "",
 };
-
-const getErrorMessage = (error) =>
-  error.response?.data?.message ||
-  error.response?.data?.error ||
-  "Có lỗi xảy ra";
 
 const normalizeUser = (payload) => {
   const response = payload?.data || payload;
@@ -38,56 +26,6 @@ const getToken = (payload) => {
   const response = payload?.data || payload;
   return response?.jwt || response?.accessToken || response?.token || "";
 };
-
-export const updateProfile = createAsyncThunk(
-  "user/updateProfile",
-  async (userData, { rejectWithValue }) => {
-    try {
-      const response = await api.put("/users/profile", userData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
-  }
-);
-
-export const changePassword = createAsyncThunk(
-  "user/changePassword",
-  async (passwordData, { rejectWithValue }) => {
-    try {
-      const response = await api.put("/users/password", passwordData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
-  }
-);
-
-export const updateAvatar = createAsyncThunk(
-  "user/updateAvatar",
-  async (formData, { rejectWithValue }) => {
-    try {
-      const response = await api.post("/users/avatar", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
-  }
-);
-
-export const updateSettings = createAsyncThunk(
-  "user/updateSettings",
-  async (settings, { rejectWithValue }) => {
-    try {
-      const response = await api.put("/users/settings", settings);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(getErrorMessage(error));
-    }
-  }
-);
 
 export const userSlice = createSlice({
   name: "user",

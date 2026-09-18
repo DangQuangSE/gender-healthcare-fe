@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { getMySchedule } from "../../../../api/consultantAPI";
+import { getMySchedule } from "../../../scheduling/scheduleApi";
 import dayjs from "dayjs";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 /**
  * Custom hook for managing my schedule appointments
@@ -31,7 +32,9 @@ export const useMySchedule = () => {
         err.message ||
         "Failed to fetch appointments";
       setError(errorMessage);
-      toast.error(`Error: ${errorMessage}`);
+      toast.error(
+        NOTIFICATION_MESSAGES.SCHEDULE.FETCH_APPOINTMENTS_FAILED(errorMessage)
+      );
       console.error("Error fetching appointments:", err);
       throw err;
     } finally {

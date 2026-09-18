@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { message, Avatar, Modal } from "antd";
 import "./BookingConfirmation.css";
 import { useState, useEffect } from "react";
-import api from "../../../configs/api";
+import { createBooking } from "../../../features/appointments/appointmentApi";
+import { getCurrentUser } from "../../../features/profile/profileApi";
 import authStorage from "../../../shared/storage/authStorage";
 import bookingStorage from "../../../shared/storage/bookingStorage";
 import storage from "../../../shared/storage/storage";
@@ -35,27 +36,6 @@ const BookingConfirmation = () => {
   };
 
   // Debug log để kiểm tra dữ liệu
-  console.log("[DEBUG] BookingConfirmation - booking data:", booking);
-  console.log(
-    "[DEBUG] BookingConfirmation - consultantId:",
-    booking?.consultantId
-  );
-  console.log(
-    "[DEBUG] BookingConfirmation - booking object keys:",
-    Object.keys(booking || {})
-  );
-  console.log(
-    "[DEBUG] BookingConfirmation - selectedConsultantName:",
-    selectedConsultantName
-  );
-  console.log(
-    "[DEBUG] BookingConfirmation - selectedConsultantSpecialization:",
-    selectedConsultantSpecialization
-  );
-  console.log(
-    "[DEBUG] BookingConfirmation - localStorage selectedConsultantId:",
-    selectedConsultantId
-  );
 
   // Fetch user data from API /api/me
   useEffect(() => {
@@ -66,11 +46,9 @@ const BookingConfirmation = () => {
       }
 
       try {
-        const response = await api.get("/me");
-        console.log("User data from /api/me:", response.data);
+        const response = await getCurrentUser();
         setUser(response.data);
-      } catch (error) {
-        console.error(" Error fetching user data:", error);
+      } catch {
         message.error(BOOKING_MESSAGES.USER_LOAD_FAILED);
       } finally {
         setLoading(false);
@@ -134,22 +112,10 @@ const BookingConfirmation = () => {
       consultantId: consultantId ? Number(consultantId) : null, // Thêm consultantId với fallback
     };
 
-    console.log("[DEBUG] Payload gửi trong processBooking:", payload);
-    console.log("[DEBUG] Payload details:", {
-      service_id: payload.service_id,
-      preferredDate: payload.preferredDate,
-      slot: payload.slot,
-      slot_id: payload.slot_id,
-      note: payload.note,
-      paymentMethod: payload.paymentMethod,
-      consultantId: payload.consultantId,
-    });
-
     try {
-      const res = await api.post("/booking/medicalService", payload);
+      const res = await createBooking(payload);
 
       //  In toàn bộ phản hồi từ server để kiểm tra
-      console.log("📥 Phản hồi từ backend khi tạo booking:", res.data);
 
       const appointmentId = res.data.appointmentId;
       if (!appointmentId) {
@@ -164,10 +130,6 @@ const BookingConfirmation = () => {
       // Lưu service type vào localStorage
       if (booking.serviceType) {
         storage.set(STORAGE_KEYS.LAST_BOOKED_SERVICE_TYPE, booking.serviceType);
-        console.log(
-          "💾 [DEBUG] Saved service type to localStorage:",
-          booking.serviceType
-        );
       }
 
       message.success(BOOKING_MESSAGES.SUCCESS);
@@ -192,16 +154,11 @@ const BookingConfirmation = () => {
       const errorMessage = getApiErrorMessage(error, BOOKING_MESSAGES.SERVER_ERROR);
 
       //  In lỗi đầy đủ nếu server có trả gì đó
-      console.error(" Lỗi phản hồi từ server:", error.response?.data);
       message.error(`${BOOKING_MESSAGES.FAILED}: ${errorMessage}`);
     }
   };
 
   const handleDepositConfirm = async () => {
-    console.log("[DEBUG] handleDepositConfirm started");
-    console.log("[DEBUG] Current booking data:", booking);
-    console.log("[DEBUG] Full booking data:", fullBooking);
-    console.log("[DEBUG] Deposit amount:", depositAmount);
 
     setShowDepositModal(false);
 
@@ -220,31 +177,12 @@ const BookingConfirmation = () => {
         consultantId: consultantId ? Number(consultantId) : null, // Thêm consultantId với fallback
       };
 
-      console.log(
-        "[DEBUG] Sending booking payload trong handleDepositConfirm:",
-        bookingPayload
-      );
-      console.log("[DEBUG] Booking payload details:", {
-        service_id: bookingPayload.service_id,
-        preferredDate: bookingPayload.preferredDate,
-        slot: bookingPayload.slot,
-        slot_id: bookingPayload.slot_id,
-        note: bookingPayload.note,
-        paymentMethod: bookingPayload.paymentMethod,
-        consultantId: bookingPayload.consultantId,
-      });
+      const res = await createBooking(bookingPayload);
 
-      const res = await api.post("/booking/medicalService", bookingPayload);
-
-      console.log("📥 [DEBUG] Backend response:", res.data);
-      console.log("📥 [DEBUG] Response status:", res.status);
-      console.log("📥 [DEBUG] Full response object:", res);
 
       const appointmentId = res.data.appointmentId;
-      console.log("🆔 [DEBUG] Extracted appointmentId:", appointmentId);
 
       if (!appointmentId) {
-        console.error(" [DEBUG] No appointmentId in response!");
         message.error(BOOKING_MESSAGES.APPOINTMENT_ID_MISSING);
         return;
       }
@@ -256,10 +194,6 @@ const BookingConfirmation = () => {
       // Lưu service type vào localStorage
       if (booking.serviceType) {
         storage.set(STORAGE_KEYS.LAST_BOOKED_SERVICE_TYPE, booking.serviceType);
-        console.log(
-          "💾 [DEBUG] Saved service type to localStorage (direct payment):",
-          booking.serviceType
-        );
       }
 
       message.success(BOOKING_MESSAGES.SUCCESS);
@@ -274,21 +208,14 @@ const BookingConfirmation = () => {
         isDirectPayment: true, // Flag để Payment.jsx biết gọi create-off
       };
 
-      console.log("💾 [DEBUG] Saving to localStorage:", pendingBookingData);
       bookingStorage.setPendingBooking(pendingBookingData);
 
-      console.log("[DEBUG] Navigating to /payment");
       // Chuyển đến trang Payment để xử lý create-off
       navigate("/payment");
     } catch (error) {
-      console.error(" [DEBUG] Error occurred:", error);
-      console.error(" [DEBUG] Error response:", error.response);
-      console.error(" [DEBUG] Error response data:", error.response?.data);
-      console.error(" [DEBUG] Error response status:", error.response?.status);
 
       const errorMessage = getApiErrorMessage(error, BOOKING_MESSAGES.SERVER_ERROR);
 
-      console.error(" [DEBUG] Final error message:", errorMessage);
       message.error(`${BOOKING_MESSAGES.FAILED}: ${errorMessage}`);
     }
   };
@@ -395,7 +322,7 @@ const BookingConfirmation = () => {
           <div className="booking-info-item">
             <span className="booking-info-label">Bác sĩ:</span>
             <span className="booking-info-value booking-consultant-name">
-              selectedConsultantId && selectedConsultantName
+              {selectedConsultantId && selectedConsultantName
                 ? `${selectedConsultantName} - ${selectedConsultantSpecialization}`
                 : BOOKING_MESSAGES.CONSULTANT_NOT_SELECTED}
             </span>
