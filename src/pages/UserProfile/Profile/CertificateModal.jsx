@@ -1,25 +1,16 @@
-import React, { useState, useEffect } from "react";
-import {
-  Modal,
-  Form,
-  Input,
-  Button,
-  DatePicker,
-  Upload,
-  message,
-  Row,
-  Col,
-} from "antd";
-import {
-  PlusOutlined,
-  DeleteOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Button, Col, DatePicker, Form, Input, Modal, Row, Upload, message } from "antd";
+import { DeleteOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   createCertification,
   updateCertification,
 } from "../../../features/profile/profileApi";
-import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
+import {
+  CERTIFICATE_MESSAGES,
+  CERTIFICATE_TEXT,
+  createEmptyCertificate,
+  normalizeCertificates,
+} from "./CertificateModal.constants";
 
 const CertificateModal = ({
   visible,
@@ -31,61 +22,28 @@ const CertificateModal = ({
 }) => {
   const [form] = Form.useForm();
   const [certificates, setCertificates] = useState(
-    initialValue.length
-      ? initialValue.map((cert) => ({
-          ...cert,
-          imageFile: null, // Reset imageFile for editing
-        }))
-      : [{ name: "", issuer: "", date: null, imageUrl: "", imageFile: null }]
+    normalizeCertificates(initialValue)
   );
 
-  // Reset certificates when modal opens/closes or initialValue changes
   useEffect(() => {
-    if (visible) {
-      if (initialValue.length) {
-        setCertificates(
-          initialValue.map((cert) => ({
-            ...cert,
-            imageFile: null,
-          }))
-        );
-      } else {
-        setCertificates([
-          { name: "", issuer: "", date: null, imageUrl: "", imageFile: null },
-        ]);
-      }
-    }
-  }, [visible, initialValue]);
+    if (!visible) return;
+    setCertificates(normalizeCertificates(initialValue));
+  }, [initialValue, visible]);
 
-  const handleAddCertificate = () => {
-    setCertificates([
-      ...certificates,
-      { name: "", issuer: "", date: null, imageUrl: "", imageFile: null },
-    ]);
-  };
-
-  const handleRemoveCertificate = (index) => {
-    const newCertificates = [...certificates];
-    newCertificates.splice(index, 1);
-    setCertificates(newCertificates);
-  };
-
-  const handleCertificateChange = (index, field, value) => {
-    const newCertificates = [...certificates];
-    newCertificates[index][field] = value;
-    setCertificates(newCertificates);
+  const updateCertificateField = (index, field, value) => {
+    setCertificates((currentCertificates) =>
+      currentCertificates.map((certificate, currentIndex) =>
+        currentIndex === index
+          ? { ...certificate, [field]: value }
+          : certificate
+      )
+    );
   };
 
   const handleImageSelect = (file, index) => {
-    // Lưu file vào state để sau này gửi lên server
-    handleCertificateChange(index, "imageFile", file);
-
-    // Tạo URL tạm thời để hiển thị preview
-    const imageUrl = URL.createObjectURL(file);
-    handleCertificateChange(index, "imageUrl", imageUrl);
-
-    // Không tải lên ngay, chỉ lưu file để tải lên khi submit form
-    return false; // Prevent default upload behavior
+    updateCertificateField(index, "imageFile", file);
+    updateCertificateField(index, "imageUrl", URL.createObjectURL(file));
+    return false;
   };
 
   const handleSubmit = async () => {
@@ -93,205 +51,168 @@ const CertificateModal = ({
       await form.validateFields();
 
       if (isEditing && certificates.length === 1) {
-        // Chế độ chỉnh sửa - chỉ có 1 chứng chỉ
-        const cert = certificates[0];
-
-        if (!cert.name) {
-          message.error(NOTIFICATION_MESSAGES.CERTIFICATE.NAME_REQUIRED);
+        const certificate = certificates[0];
+        if (!certificate.name) {
+          message.error(CERTIFICATE_MESSAGES.NAME_REQUIRED);
           return;
         }
 
         const formData = new FormData();
-        formData.append("name", cert.name);
-        formData.append("description", cert.issuer || "");
-
-        // Chỉ gửi hình ảnh mới nếu người dùng đã chọn file mới
-        if (cert.imageFile) {
-          formData.append("image", cert.imageFile);
+        formData.append("name", certificate.name);
+        formData.append("description", certificate.issuer || "");
+        if (certificate.imageFile) {
+          formData.append("image", certificate.imageFile);
         }
 
         try {
-          const response = await updateCertification(cert.id, formData);
-
-          message.success(NOTIFICATION_MESSAGES.CERTIFICATE.UPDATE_SUCCESS);
-          onSave([response.data]);
+          await updateCertification(certificate.id, formData);
+          message.success(CERTIFICATE_MESSAGES.UPDATE_SUCCESS);
+          onSave();
         } catch {
-          message.error(NOTIFICATION_MESSAGES.CERTIFICATE.UPDATE_FAILED);
+          message.error(CERTIFICATE_MESSAGES.UPDATE_FAILED);
         }
-      } else {
-        // Chế độ tạo mới - logic cũ
-        const certificatePromises = certificates.map(async (cert, index) => {
-          if (!cert.name || !cert.imageFile) {
-            message.error(NOTIFICATION_MESSAGES.CERTIFICATE.ITEM_INVALID(index));
+        return;
+      }
+
+      const results = await Promise.all(
+        certificates.map(async (certificate, index) => {
+          if (!certificate.name || !certificate.imageFile) {
+            message.error(
+              !certificate.name
+                ? CERTIFICATE_MESSAGES.ITEM_INVALID(index)
+                : CERTIFICATE_MESSAGES.IMAGE_REQUIRED
+            );
             return null;
           }
 
           const formData = new FormData();
-          formData.append("name", cert.name);
-          formData.append("description", cert.issuer || "");
-          formData.append("image", cert.imageFile);
+          formData.append("name", certificate.name);
+          formData.append("description", certificate.issuer || "");
+          formData.append("image", certificate.imageFile);
 
           try {
             const response = await createCertification(formData);
-
-            return response.data;
+            return response?.data ?? response;
           } catch {
-            message.error(NOTIFICATION_MESSAGES.CERTIFICATE.CREATE_FAILED(index));
+            message.error(CERTIFICATE_MESSAGES.CREATE_FAILED(index));
             return null;
           }
-        });
+        })
+      );
 
-        const results = await Promise.all(certificatePromises);
-        const successfulCertificates = results.filter(
-          (result) => result !== null
+      const successfulCertificates = results.filter(Boolean);
+      if (successfulCertificates.length) {
+        message.success(
+          CERTIFICATE_MESSAGES.CREATED_COUNT(successfulCertificates.length)
         );
-
-        if (successfulCertificates.length > 0) {
-          message.success(
-            NOTIFICATION_MESSAGES.CERTIFICATE.CREATED_COUNT(
-              successfulCertificates.length
-            )
-          );
-          onSave(successfulCertificates);
-        } else {
-          message.error(NOTIFICATION_MESSAGES.CERTIFICATE.NONE_CREATED);
-        }
+        onSave();
+      } else {
+        message.error(CERTIFICATE_MESSAGES.NONE_CREATED);
       }
     } catch {
-      // Field-level validation already displays the relevant message.
+      // Ant Design displays field-level validation errors.
     }
   };
 
   return (
     <Modal
-      title={isEditing ? "Chỉnh sửa chứng chỉ" : "Quản lý chứng chỉ"}
+      title={isEditing ? CERTIFICATE_TEXT.EDIT_TITLE : CERTIFICATE_TEXT.MANAGE_TITLE}
       open={visible}
       onCancel={onCancel}
       footer={[
         <Button key="cancel" onClick={onCancel}>
-          Hủy
+          {CERTIFICATE_TEXT.CANCEL}
         </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          loading={loading}
-          onClick={handleSubmit}
-        >
-          {isEditing ? "Cập nhật" : "Lưu"}
+        <Button key="submit" type="primary" loading={loading} onClick={handleSubmit}>
+          {isEditing ? CERTIFICATE_TEXT.UPDATE : CERTIFICATE_TEXT.SAVE}
         </Button>,
       ]}
       width={700}
     >
       <Form form={form} layout="vertical">
-        {certificates.map((cert, index) => (
-          <div key={index}>
-            {/* Chỉ hiển thị nút thêm/xóa khi không ở chế độ chỉnh sửa */}
+        {certificates.map((certificate, index) => (
+          <div key={certificate.id || index}>
             {!isEditing && index > 0 && (
-              <div
-                style={{ margin: "16px 0", borderTop: "1px solid #f0f0f0" }}
-              ></div>
+              <div style={{ margin: "16px 0", borderTop: "1px solid #f0f0f0" }} />
             )}
             {!isEditing && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <h4>Chứng chỉ #{index + 1}</h4>
+              <div className="certificate-modal-heading">
+                <h4>{CERTIFICATE_TEXT.ITEM_TITLE(index)}</h4>
                 {certificates.length > 1 && (
                   <Button
                     type="text"
                     danger
                     icon={<DeleteOutlined />}
-                    onClick={() => handleRemoveCertificate(index)}
+                    onClick={() =>
+                      setCertificates((currentCertificates) =>
+                        currentCertificates.filter(
+                          (_, currentIndex) => currentIndex !== index
+                        )
+                      )
+                    }
                   />
                 )}
               </div>
             )}
-
-            {/* Form fields */}
             <Row gutter={16}>
               <Col span={16}>
                 <Form.Item
-                  label="Tên chứng chỉ"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập tên chứng chỉ" },
-                  ]}
+                  label={CERTIFICATE_TEXT.NAME_LABEL}
+                  rules={[{ required: true, message: CERTIFICATE_MESSAGES.NAME_REQUIRED }]}
                 >
                   <Input
-                    placeholder="Ví dụ: Chứng chỉ tiếng Anh IELTS"
-                    value={cert.name}
-                    onChange={(e) =>
-                      handleCertificateChange(index, "name", e.target.value)
+                    placeholder={CERTIFICATE_TEXT.NAME_PLACEHOLDER}
+                    value={certificate.name}
+                    onChange={(event) =>
+                      updateCertificateField(index, "name", event.target.value)
                     }
                   />
                 </Form.Item>
-                <Form.Item label="Đơn vị cấp">
+                <Form.Item label={CERTIFICATE_TEXT.ISSUER_LABEL}>
                   <Input
-                    placeholder="Ví dụ: British Council"
-                    value={cert.issuer}
-                    onChange={(e) =>
-                      handleCertificateChange(index, "issuer", e.target.value)
+                    placeholder={CERTIFICATE_TEXT.ISSUER_PLACEHOLDER}
+                    value={certificate.issuer}
+                    onChange={(event) =>
+                      updateCertificateField(index, "issuer", event.target.value)
                     }
                   />
                 </Form.Item>
-                <Form.Item label="Ngày cấp">
+                <Form.Item label={CERTIFICATE_TEXT.DATE_LABEL}>
                   <DatePicker
                     style={{ width: "100%" }}
-                    placeholder="Chọn ngày cấp"
-                    value={cert.date}
-                    onChange={(date) =>
-                      handleCertificateChange(index, "date", date)
-                    }
+                    placeholder={CERTIFICATE_TEXT.DATE_PLACEHOLDER}
+                    value={certificate.date}
+                    onChange={(date) => updateCertificateField(index, "date", date)}
                   />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item
-                  label="Hình ảnh chứng chỉ"
+                  label={CERTIFICATE_TEXT.IMAGE_LABEL}
                   rules={
                     !isEditing
-                      ? [
-                          {
-                            required: true,
-                            message: "Vui lòng chọn hình ảnh chứng chỉ",
-                          },
-                        ]
+                      ? [{ required: true, message: CERTIFICATE_MESSAGES.IMAGE_REQUIRED }]
                       : []
                   }
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
+                  <div className="certificate-modal-image-field">
                     <Upload
                       beforeUpload={(file) => handleImageSelect(file, index)}
                       showUploadList={false}
                       accept="image/*"
                     >
                       <Button icon={<UploadOutlined />}>
-                        {isEditing ? "Thay đổi ảnh" : "Chọn ảnh"}
+                        {isEditing
+                          ? CERTIFICATE_TEXT.CHANGE_IMAGE
+                          : CERTIFICATE_TEXT.CHOOSE_IMAGE}
                       </Button>
                     </Upload>
-                    {cert.imageUrl && (
-                      <div style={{ marginTop: "8px" }}>
-                        <img
-                          src={cert.imageUrl}
-                          alt="Certificate"
-                          style={{
-                            width: "100%",
-                            maxHeight: "150px",
-                            objectFit: "cover",
-                            borderRadius: "4px",
-                            border: "1px solid #d9d9d9",
-                          }}
-                        />
-                      </div>
+                    {certificate.imageUrl && (
+                      <img
+                        src={certificate.imageUrl}
+                        alt={CERTIFICATE_TEXT.IMAGE_ALT}
+                        className="certificate-modal-image"
+                      />
                     )}
                   </div>
                 </Form.Item>
@@ -299,18 +220,21 @@ const CertificateModal = ({
             </Row>
           </div>
         ))}
-
-        {/* Chỉ hiển thị nút thêm chứng chỉ khi không ở chế độ chỉnh sửa */}
         {!isEditing && (
           <Form.Item>
             <Button
               style={{ marginTop: "16px" }}
               type="dashed"
-              onClick={handleAddCertificate}
+              onClick={() =>
+                setCertificates((currentCertificates) => [
+                  ...currentCertificates,
+                  createEmptyCertificate(),
+                ])
+              }
               block
               icon={<PlusOutlined />}
             >
-              Thêm chứng chỉ
+              {CERTIFICATE_TEXT.ADD}
             </Button>
           </Form.Item>
         )}

@@ -46,15 +46,16 @@ Only `VITE_*` values are available to browser code. Never put private provider c
 ## Verification
 
 ```powershell
+npm test
 npm run lint
 npm run build
 ```
 
-Use the shared manual flow checklist in [`plans/gender-healthcare-refactor/docs/verification/smoke-checklist.md`](../plans/gender-healthcare-refactor/docs/verification/smoke-checklist.md) for public pages, authentication, booking, medical results, blog, chat, payment and role dashboards.
+Use the shared manual flow checklist in [`plans/gender-healthcare-full-refactor/runbook.md`](../plans/gender-healthcare-full-refactor/runbook.md) for public pages, authentication, booking, medical results, blog, chat, payment and role dashboards.
 
 ## Deployment
 
-The static build is served by Nginx. Prepare the server with the template at `deploy/nginx.conf`, then deploy with:
+The static build is served by Nginx. Prepare the server with the repository deployment script, then deploy with:
 
 ```bash
 export DEPLOY_HOST=your-server.example
@@ -62,4 +63,4 @@ export DEPLOY_USER=deploy
 ./deploy/frontend-deploy.sh
 ```
 
-The script creates a timestamped release, updates the `current` symlink, validates Nginx, reloads it, checks the served HTML and rolls back on failure. See [`plans/gender-healthcare-refactor/docs/deployment/runbook.md`](../plans/gender-healthcare-refactor/docs/deployment/runbook.md).
+The script creates a timestamped release, updates the `current` symlink, validates Nginx, reloads it, checks the served HTML and rolls back on failure. See [`plans/gender-healthcare-full-refactor/runbook.md`](../plans/gender-healthcare-full-refactor/runbook.md).

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config/env";
 import authStorage from "../storage/authStorage";
-import { unwrapApiResponse } from "./response";
+import { normalizeApiResponse } from "./response";
 
 const httpClient = axios.create({
   baseURL: API_BASE_URL,
@@ -22,7 +22,8 @@ httpClient.interceptors.request.use((config) => {
 
 httpClient.interceptors.response.use(
   (response) => {
-    response.data = unwrapApiResponse(response.data);
+    response.apiResponse = normalizeApiResponse(response.data);
+    response.data = response.apiResponse.data;
     return response;
   },
   (error) => Promise.reject(error)
