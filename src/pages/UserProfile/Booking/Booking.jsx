@@ -2,7 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { message } from "antd";
-import { verifyVNPayPayment as verifyVNPayPaymentRequest } from "../../../features/payments/paymentApi";
+import {
+  getPayOSPaymentStatus,
+  getPaymentStatusData,
+} from "../../../features/payments/paymentApi";
+import {
+  isTerminalPaymentStatus,
+  parsePayOSReturn,
+} from "../../../features/payments/paymentFlow";
+import { refreshPayOSStatus } from "../../../features/payments/paymentStatus";
 import {
   cancelAppointment,
   createOnlineMeeting,
@@ -16,6 +24,7 @@ import MedicalResultModal from "./MedicalResultModal";
 import BookingAppointmentCard from "./BookingAppointmentCard";
 import BookingDetailModal from "./BookingDetailModal";
 import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
+import { PAYMENT_MESSAGES } from "../../../shared/constants/paymentMessages";
 import {
   APPOINTMENT_STATUS_BY_TAB,
   BOOKING_TABS,
@@ -105,14 +114,6 @@ const Booking = () => {
     }
   };
 
-  const handleVerifyVNPayPayment = useCallback(async (urlParams) => {
-    try {
-      await verifyVNPayPaymentRequest(Object.fromEntries(urlParams.entries()));
-    } catch {
-      message.error(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_VERIFY_FAILED);
-    }
-  }, []);
-
   const createZoomMeetingForAppointment = useCallback(
     async (appointmentId) => {
       try {
@@ -147,33 +148,51 @@ const Booking = () => {
     }
   };
 
-  const handlePaymentReturn = useCallback(() => {
-    const query = new URLSearchParams(search);
-    const responseCode = query.get("vnp_ResponseCode");
-    const transactionStatus = query.get("vnp_TransactionStatus");
-    if (!responseCode || paymentMessageShown.current) return;
+  const handlePaymentReturn = useCallback(async () => {
+    const returnState = parsePayOSReturn(search);
+    if (returnState.kind === "none" || paymentMessageShown.current) return;
 
-    bookingStorage.removePendingBooking();
     paymentMessageShown.current = true;
-    if (responseCode === "00" && transactionStatus === "00") {
-      message.success(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_SUCCESS);
-      handleVerifyVNPayPayment(query);
-      setTimeout(async () => {
-        try {
-          const response = await getAppointmentsByStatus("CONFIRMED");
-          const latestAppointment = response.data?.[response.data.length - 1];
-          if (latestAppointment) {
-            createAppointmentNotification(latestAppointment.id);
-            createZoomMeetingForAppointment(latestAppointment.id);
-          }
-        } catch {
-          // The appointment list refresh remains the source of truth.
+    if (returnState.kind === "invalid") {
+      message.error(PAYMENT_MESSAGES.RETURN_INVALID);
+      window.history.replaceState({}, document.title, BOOKING_TEXT.ROUTE);
+      return;
+    }
+
+    if (returnState.kind === "cancelled") {
+      message.warning(PAYMENT_MESSAGES.RETURN_CANCELLED);
+    }
+
+    try {
+      const latest = await refreshPayOSStatus(
+        async (orderCode) => getPaymentStatusData(await getPayOSPaymentStatus(orderCode)),
+        returnState.orderCode,
+      );
+
+      if (isTerminalPaymentStatus(latest?.paymentStatus)) {
+        bookingStorage.removePendingBooking();
+        if (latest.paymentStatus === "SUCCESS") {
+          message.success(PAYMENT_MESSAGES.SUCCESS);
+          setTimeout(async () => {
+            try {
+              const response = await getAppointmentsByStatus("CONFIRMED");
+              const latestAppointment = response.data?.[response.data.length - 1];
+              if (latestAppointment) {
+                createAppointmentNotification(latestAppointment.id);
+                createZoomMeetingForAppointment(latestAppointment.id);
+              }
+            } catch {
+              // The appointment list refresh remains the source of truth.
+            }
+          }, 2000);
+        } else {
+          message.error(PAYMENT_MESSAGES.FAILED_OR_CANCELLED);
         }
-      }, 2000);
-    } else if (responseCode === "24") {
-      message.warning(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_CANCELLED);
-    } else {
-      message.error(NOTIFICATION_MESSAGES.BOOKING.PAYMENT_FAILED);
+      } else {
+        message.info(PAYMENT_MESSAGES.PENDING);
+      }
+    } catch {
+      message.error(PAYMENT_MESSAGES.STATUS_REFRESH_FAILED);
     }
 
     window.history.replaceState({}, document.title, BOOKING_TEXT.ROUTE);
@@ -181,7 +200,6 @@ const Booking = () => {
   }, [
     createZoomMeetingForAppointment,
     fetchAppointments,
-    handleVerifyVNPayPayment,
     search,
   ]);
 

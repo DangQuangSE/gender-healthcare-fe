@@ -1,202 +1,152 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Result, Button, Spin, message } from "antd";
 import {
-  createOfflinePayment,
-  createVNPayPayment,
+  createPayOSDepositPayment,
+  createPayOSFullPayment,
+  getPaymentLinkData,
+  getPayOSPaymentStatus,
+  getPaymentStatusData,
 } from "../../payments/paymentApi";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 import bookingStorage from "../../../shared/storage/bookingStorage";
 import { PAYMENT_MESSAGES } from "../../../shared/constants/paymentMessages";
+import {
+  getPaymentIntent,
+  isTerminalPaymentStatus,
+  parsePayOSReturn,
+  PAYMENT_INTENTS,
+} from "../../payments/paymentFlow";
+import { refreshPayOSStatus } from "../../payments/paymentStatus";
+import { PAYMENT_VIEW_STATE } from "./Payment.constants";
 
 const Payment = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [loading, setLoading] = useState(true);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-
+  const { search } = useLocation();
+  const [viewState, setViewState] = useState(PAYMENT_VIEW_STATE.REDIRECTING);
+  const [statusResponse, setStatusResponse] = useState(null);
   const booking = useMemo(() => bookingStorage.getPendingBooking(), []);
+  const returnState = useMemo(() => parsePayOSReturn(search), [search]);
 
-  // Check VNPay return parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const vnpResponseCode = urlParams.get("vnp_ResponseCode");
-
-    if (vnpResponseCode) {
-      // User quay lại từ VNPay
-      if (vnpResponseCode === "00") {
-        // Thanh toán thành công
-        bookingStorage.removePendingBooking();
-        message.success(PAYMENT_MESSAGES.SUCCESS);
-        setPaymentSuccess(true);
-        setLoading(false);
-
-        setTimeout(() => {
-          navigate("/user/booking");
-        }, 2000);
-      } else {
-        // Thanh toán thất bại
-        message.error(PAYMENT_MESSAGES.FAILED_OR_CANCELLED);
-        setLoading(false);
-        setTimeout(() => {
-          navigate("/");
-        }, 3000);
-      }
-      return; // Không chạy createPayment nếu đã có VNPay response
-    }
-  }, [location.search, navigate]);
-
-  useEffect(() => {
-    // Chỉ tạo payment nếu không có VNPay response trong URL
-    const urlParams = new URLSearchParams(location.search);
-    const vnpResponseCode = urlParams.get("vnp_ResponseCode");
-
-    if (vnpResponseCode) {
-      return; // Đã xử lý VNPay response ở useEffect trên
+  const refreshStatus = useCallback(async (orderCode) => {
+    if (!orderCode) {
+      message.error(PAYMENT_MESSAGES.RETURN_INVALID);
+      setViewState(PAYMENT_VIEW_STATE.ERROR);
+      return null;
     }
 
-    const createPayment = async () => {
-      if (!booking || !booking.amount || !booking.serviceName) {
-        setLoading(false);
-        return;
-      }
+    const latest = await refreshPayOSStatus(
+      async (code) => getPaymentStatusData(await getPayOSPaymentStatus(code)),
+      orderCode,
+    );
+    setStatusResponse(latest);
+    if (isTerminalPaymentStatus(latest?.paymentStatus)) {
+      bookingStorage.removePendingBooking();
+      setViewState(latest.paymentStatus === "SUCCESS"
+        ? PAYMENT_VIEW_STATE.SUCCESS
+        : PAYMENT_VIEW_STATE.ERROR);
+      return latest;
+    }
 
-      // Xử lý thanh toán trực tiếp - gọi create-off giống hệt VNPay
-      if (booking.isDirectPayment) {
-        try {
-          const res = await createOfflinePayment(booking.appointmentId);
+    setViewState(PAYMENT_VIEW_STATE.PENDING);
+    return latest;
+  }, []);
 
-          // Kiểm tra responseCode để xử lý kết quả tạo payment giống VNPay
-          if (res.data.responseCode === 0 && res.data.url) {
-            // Tạo payment URL thành công, chuyển hướng đến VNPay
-            const payUrl = res.data.url;
+  useEffect(() => {
+    let active = true;
 
-            bookingStorage.removePendingBooking();
-            setLoading(false); // Hiển thị trang "Đang chuyển đến cổng thanh toán..."
-
-            // Chuyển hướng sau 5 giây
-            setTimeout(() => {
-              window.location.href = payUrl;
-            }, 5000);
-          } else if (res.data.responseCode === 0 && !res.data.url) {
-            // Trường hợp đặc biệt: responseCode = 0 nhưng không có URL
-            bookingStorage.removePendingBooking();
-            message.success(res.data.message || PAYMENT_MESSAGES.BOOKING_SUCCESS);
-            setPaymentSuccess(true);
-            setLoading(false);
-
-            setTimeout(() => {
-              navigate("/user/booking");
-            }, 2000);
-          } else {
-            // Lỗi tạo payment
-            bookingStorage.removePendingBooking();
-            message.error(
-              res.data.message || PAYMENT_MESSAGES.CREATE_LINK_FAILED
-            );
-            setLoading(false);
-            setTimeout(() => {
-              navigate("/");
-            }, 3000);
-          }
-        } catch {
-          bookingStorage.removePendingBooking();
-          message.error(PAYMENT_MESSAGES.CREATE_LINK_ERROR);
-          setLoading(false);
-          setTimeout(() => {
-            navigate("/");
-          }, 3000);
-        }
-        return;
-      }
-
-      // Xử lý VNPay (logic cũ)
-      if (!booking.appointmentId || !booking.paymentMethod) {
-        setLoading(false);
-        return;
-      }
-
+    const run = async () => {
       try {
-        const res = await createVNPayPayment(booking.appointmentId);
+        if (returnState.kind !== "none") {
+          if (returnState.kind === "invalid") {
+            message.error(PAYMENT_MESSAGES.RETURN_INVALID);
+            if (active) setViewState(PAYMENT_VIEW_STATE.ERROR);
+            return;
+          }
 
-        // Kiểm tra responseCode để xử lý kết quả tạo payment
-        if (res.data.responseCode === 0 && res.data.url) {
-          // Tạo payment URL thành công, chuyển hướng đến VNPay
-          const payUrl = res.data.url;
+          if (returnState.kind === "cancelled") {
+            message.warning(PAYMENT_MESSAGES.RETURN_CANCELLED);
+          }
 
-          bookingStorage.removePendingBooking();
-          setLoading(false); // Hiển thị trang "Đang chuyển đến cổng thanh toán..."
-
-          // Chuyển hướng sau 5 giây
-          setTimeout(() => {
-            window.location.href = payUrl;
-          }, 1500);
-        } else if (res.data.responseCode === 0 && !res.data.url) {
-          // Trường hợp đặc biệt: responseCode = 0 nhưng không có URL (có thể là thanh toán trực tiếp)
-          bookingStorage.removePendingBooking();
-          message.success(res.data.message || PAYMENT_MESSAGES.BOOKING_CREATED);
-          setPaymentSuccess(true);
-          setLoading(false);
-
-          // Chuyển hướng đến trang booking sau 2 giây
-          setTimeout(() => {
-            navigate("/user/booking");
-          }, 2000);
-        } else {
-          // Lỗi tạo payment
-          throw new Error(
-            res.data.message || PAYMENT_MESSAGES.CREATE_LINK_FAILED
-          );
+          await refreshStatus(returnState.orderCode);
+          return;
         }
-      } catch (err) {
-        const msg = err.response?.data?.message || PAYMENT_MESSAGES.INITIALIZE_FAILED;
-        message.error(msg);
-        setLoading(false);
-        setTimeout(() => {
-          navigate("/");
-        }, 3000);
+
+        if (!booking?.appointmentId) {
+          if (active) setViewState(PAYMENT_VIEW_STATE.ERROR);
+          return;
+        }
+
+        const paymentIntent = getPaymentIntent(booking);
+        const createPayment = paymentIntent === PAYMENT_INTENTS.DEPOSIT
+          ? createPayOSDepositPayment
+          : createPayOSFullPayment;
+        const link = getPaymentLinkData(await createPayment(booking.appointmentId));
+
+        if (!link?.checkoutUrl || !link?.orderCode) {
+          throw new Error(PAYMENT_MESSAGES.CREATE_LINK_FAILED);
+        }
+
+        bookingStorage.setPendingBooking({
+          ...booking,
+          paymentIntent,
+          orderCode: link.orderCode,
+          paymentLinkId: link.paymentLinkId,
+        });
+        if (active) {
+          setViewState(PAYMENT_VIEW_STATE.REDIRECTING);
+          window.location.assign(link.checkoutUrl);
+        }
+      } catch (error) {
+        if (!active) return;
+        message.error(getApiErrorMessage(error, PAYMENT_MESSAGES.INITIALIZE_FAILED));
+        setViewState(PAYMENT_VIEW_STATE.ERROR);
       }
     };
 
-    createPayment();
-  }, [booking, navigate, location.search]);
+    run();
+    return () => {
+      active = false;
+    };
+  }, [booking, refreshStatus, returnState]);
 
-  if (loading) {
+  if (viewState === PAYMENT_VIEW_STATE.REDIRECTING) {
     return <Spin tip={PAYMENT_MESSAGES.PAYMENT_LOADING} fullscreen />;
   }
 
-  // Hiển thị UI dựa trên trạng thái thanh toán
-  if (paymentSuccess) {
+  if (viewState === PAYMENT_VIEW_STATE.SUCCESS) {
     return (
       <Result
         status="success"
         title={PAYMENT_MESSAGES.SUCCESS}
         subTitle={PAYMENT_MESSAGES.SUCCESS_SUBTITLE}
-        extra={[
-          <Button
-            key="booking"
-            type="primary"
-            onClick={() => navigate("/user/booking")}
-          >
-            {PAYMENT_MESSAGES.VIEW_BOOKING}
-          </Button>,
-          <Button key="home" onClick={() => navigate("/")}>
-            {PAYMENT_MESSAGES.HOME}
-          </Button>,
-        ]}
+        extra={<Button type="primary" onClick={() => navigate("/user/booking")}>
+          {PAYMENT_MESSAGES.VIEW_BOOKING}
+        </Button>}
+      />
+    );
+  }
+
+  if (viewState === PAYMENT_VIEW_STATE.PENDING) {
+    return (
+      <Result
+        status="info"
+        title={PAYMENT_MESSAGES.PENDING}
+        subTitle={statusResponse?.message || PAYMENT_MESSAGES.PENDING_SUBTITLE}
+        extra={<Button onClick={() => refreshStatus(returnState.orderCode || booking?.orderCode)}>
+          {PAYMENT_MESSAGES.REFRESH_STATUS}
+        </Button>}
       />
     );
   }
 
   return (
     <Result
-      status="info"
-      title={PAYMENT_MESSAGES.REDIRECTING}
-      subTitle={PAYMENT_MESSAGES.REDIRECTING_SUBTITLE}
-      extra={[
-        <Button key="home" onClick={() => navigate("/")}>
-          {PAYMENT_MESSAGES.HOME}
-        </Button>,
-      ]}
+      status="error"
+      title={PAYMENT_MESSAGES.FAILED_OR_CANCELLED}
+      extra={<Button onClick={() => navigate("/user/booking")}>
+        {PAYMENT_MESSAGES.VIEW_BOOKING}
+      </Button>}
     />
   );
 };

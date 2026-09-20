@@ -11,6 +11,12 @@ import storage from "../../../shared/storage/storage";
 import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
 import { getApiErrorMessage } from "../../../shared/api/errors";
 import { BOOKING_MESSAGES } from "../../../shared/constants/bookingMessages";
+import {
+  BOOKING_DEPOSIT_RATE,
+  BOOKING_PAYMENT_COPY,
+  BOOKING_PAYMENT_INTENTS,
+  BOOKING_PAYMENT_METHOD,
+} from "./BookingConfirmation.constants";
 
 const BookingConfirmation = () => {
   const navigate = useNavigate();
@@ -24,7 +30,7 @@ const BookingConfirmation = () => {
   const selectedConsultantSpecialization = bookingStorage.get(
     STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION
   );
-  const [paymentMethod, setPaymentMethod] = useState("direct");
+  const [paymentIntent, setPaymentIntent] = useState(BOOKING_PAYMENT_INTENTS.FULL);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
@@ -88,12 +94,12 @@ const BookingConfirmation = () => {
 
   const handleConfirmBooking = async () => {
     // Nếu chọn thanh toán trực tiếp, hiển thị modal cảnh báo trước
-    if (paymentMethod === "direct") {
+    if (paymentIntent === BOOKING_PAYMENT_INTENTS.DEPOSIT) {
       setShowDepositModal(true);
       return;
     }
 
-    // Tiếp tục với logic booking bình thường cho VNPay
+    // Continue with the PayOS booking flow.
     await processBooking();
   };
 
@@ -108,7 +114,7 @@ const BookingConfirmation = () => {
       slot: booking.slot,
       slot_id: booking.slotId,
       note: booking.note,
-      paymentMethod,
+      paymentMethod: BOOKING_PAYMENT_METHOD,
       consultantId: consultantId ? Number(consultantId) : null, // Thêm consultantId với fallback
     };
 
@@ -134,17 +140,18 @@ const BookingConfirmation = () => {
 
       message.success(BOOKING_MESSAGES.SUCCESS);
 
-      // Nếu chọn thanh toán VNPay, lưu thông tin và chuyển đến trang Payment
-      if (paymentMethod === "vnpay") {
+      // Store the payment intent before opening the PayOS payment page.
+      if (paymentIntent === BOOKING_PAYMENT_INTENTS.FULL) {
         bookingStorage.setPendingBooking({
             appointmentId,
-            paymentMethod,
+            paymentMethod: BOOKING_PAYMENT_METHOD,
+            paymentIntent: BOOKING_PAYMENT_INTENTS.FULL,
             amount: fullBooking.price,
             serviceName: fullBooking.serviceName,
             serviceType: booking.serviceType, // Thêm service type vào pendingBooking
         });
 
-        // Chuyển đến trang Payment để xử lý VNPay
+        // Continue the PayOS flow on the payment page.
         navigate("/payment");
       } else {
         // Thanh toán trực tiếp - chuyển về trang booking
@@ -162,7 +169,7 @@ const BookingConfirmation = () => {
 
     setShowDepositModal(false);
 
-    // Tạo appointment trước, sau đó lưu thông tin và chuyển đến Payment giống hệt VNPay
+    // Create the appointment before starting the PayOS deposit flow.
     try {
       const consultantId =
         selectedConsultantId;
@@ -173,7 +180,7 @@ const BookingConfirmation = () => {
         slot: booking.slot,
         slot_id: booking.slotId,
         note: booking.note,
-        paymentMethod: "direct",
+        paymentMethod: BOOKING_PAYMENT_METHOD,
         consultantId: consultantId ? Number(consultantId) : null, // Thêm consultantId với fallback
       };
 
@@ -198,14 +205,14 @@ const BookingConfirmation = () => {
 
       message.success(BOOKING_MESSAGES.SUCCESS);
 
-      // Lưu thông tin và chuyển đến trang Payment để xử lý create-off giống VNPay
+      // Store the payment intent before opening the PayOS payment page.
       const pendingBookingData = {
         appointmentId,
-        paymentMethod: "direct",
+        paymentMethod: BOOKING_PAYMENT_METHOD,
+        paymentIntent: BOOKING_PAYMENT_INTENTS.DEPOSIT,
         amount: depositAmount, // 20% giá trị dịch vụ
         serviceName: fullBooking.serviceName,
         serviceType: booking.serviceType, // Thêm service type vào pendingBooking
-        isDirectPayment: true, // Flag để Payment.jsx biết gọi create-off
       };
 
       bookingStorage.setPendingBooking(pendingBookingData);
@@ -224,7 +231,7 @@ const BookingConfirmation = () => {
     setShowDepositModal(false);
   };
 
-  const depositAmount = Math.round(booking.price * 0.2);
+  const depositAmount = Math.round(booking.price * BOOKING_DEPOSIT_RATE);
 
   return (
     <div className="booking-confirmation-container">
@@ -343,54 +350,44 @@ const BookingConfirmation = () => {
       </div>
 
       <div className="booking-card booking-payment-section">
-        <h2 className="booking-payment-title">Phương thức thanh toán</h2>
+        <h2 className="booking-payment-title">{BOOKING_PAYMENT_COPY.TITLE}</h2>
         <div
           className={`booking-payment-method ${
-            paymentMethod === "direct" ? "selected" : ""
+            paymentIntent === BOOKING_PAYMENT_INTENTS.DEPOSIT ? "selected" : ""
           }`}
-          onClick={() => setPaymentMethod("direct")}
+          onClick={() => setPaymentIntent(BOOKING_PAYMENT_INTENTS.DEPOSIT)}
         >
           <input
             type="radio"
-            id="direct"
+            id="deposit"
             name="payment"
-            value="direct"
-            checked={paymentMethod === "direct"}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          />
-          <img
-            src="/cash-wallet.svg"
-            alt="Thanh toán trực tiếp"
-            className="booking-payment-logo"
+            value={BOOKING_PAYMENT_INTENTS.DEPOSIT}
+            checked={paymentIntent === BOOKING_PAYMENT_INTENTS.DEPOSIT}
+            onChange={() => setPaymentIntent(BOOKING_PAYMENT_INTENTS.DEPOSIT)}
           />
           <div className="booking-payment-info">
-            <label htmlFor="direct">Thanh toán trực tiếp</label>
-            <p>Thanh toán bằng tiền mặt tại quầy</p>
+            <label htmlFor="deposit">{BOOKING_PAYMENT_COPY.DEPOSIT_LABEL}</label>
+            <p>{BOOKING_PAYMENT_COPY.DEPOSIT_DESCRIPTION}</p>
           </div>
         </div>
 
         <div
           className={`booking-payment-method ${
-            paymentMethod === "vnpay" ? "selected" : ""
+            paymentIntent === BOOKING_PAYMENT_INTENTS.FULL ? "selected" : ""
           }`}
-          onClick={() => setPaymentMethod("vnpay")}
+          onClick={() => setPaymentIntent(BOOKING_PAYMENT_INTENTS.FULL)}
         >
           <input
             type="radio"
-            id="vnpay"
+            id="payos-full"
             name="payment"
-            value="vnpay"
-            checked={paymentMethod === "vnpay"}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          />
-          <img
-            src="/LOGOGVNPAY-QR.png"
-            alt="VNPay"
-            className="booking-payment-logo"
+            value={BOOKING_PAYMENT_INTENTS.FULL}
+            checked={paymentIntent === BOOKING_PAYMENT_INTENTS.FULL}
+            onChange={() => setPaymentIntent(BOOKING_PAYMENT_INTENTS.FULL)}
           />
           <div className="booking-payment-info">
-            <label htmlFor="vnpay">Thanh toán qua VNPay</label>
-            <p>Thẻ ATM, Visa, Mastercard, QR Code</p>
+            <label htmlFor="payos-full">{BOOKING_PAYMENT_COPY.FULL_LABEL}</label>
+            <p>{BOOKING_PAYMENT_COPY.FULL_DESCRIPTION}</p>
           </div>
         </div>
       </div>

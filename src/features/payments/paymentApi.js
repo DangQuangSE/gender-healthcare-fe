@@ -1,10 +1,18 @@
 import apiClient from "../../shared/api/client";
 
-export const createVNPayPayment = (appointmentId) =>
-  apiClient.post("/v1/payments/vnpay", { appointmentId });
+const PAYOS_PAYMENT_PATH = "/v1/payments/payos";
 
-export const createOfflinePayment = (appointmentId) =>
-  apiClient.post("/v1/payments/vnpay/offline", { appointmentId });
+const unwrapPaymentResponse = (response) => response?.data ?? response;
 
-export const verifyVNPayPayment = (parameters) =>
-  apiClient.get("/v1/payments/vnpay/return", { params: parameters });
+export const createPayOSFullPayment = (appointmentId) =>
+  apiClient.post(PAYOS_PAYMENT_PATH, { appointmentId });
+
+export const createPayOSDepositPayment = (appointmentId) =>
+  apiClient.post(`${PAYOS_PAYMENT_PATH}/deposit`, { appointmentId });
+
+export const getPayOSPaymentStatus = (orderCode) =>
+  apiClient.get(`${PAYOS_PAYMENT_PATH}/${orderCode}`);
+
+export const getPaymentLinkData = (response) => unwrapPaymentResponse(response);
+
+export const getPaymentStatusData = (response) => unwrapPaymentResponse(response);
