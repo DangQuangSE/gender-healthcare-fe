@@ -2,17 +2,8 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import "./LogModal.css";
+import { SYMPTOM_OPTIONS } from "./cycleTrackerConstants";
 
-const SYMPTOM_OPTIONS = [
-  { label: "Đau bụng", icon: "🤕" },
-  { label: "Mệt mỏi", icon: "😴" },
-  { label: "Đau đầu", icon: "🤯" },
-  { label: "Nổi mụn", icon: "😣" },
-  { label: "Căng ngực", icon: "😖" },
-  { label: "Chướng bụng", icon: "😵" },
-  { label: "Tiêu chảy", icon: "🚽" },
-  { label: "Thay đổi ", icon: "😶‍🌫️" },
-];
 
 const LogModal = ({ date, existingLog, onSave, onClose, periodDayNumber }) => {
   const [note, setNote] = useState(existingLog?.note || "");
@@ -27,10 +18,6 @@ const LogModal = ({ date, existingLog, onSave, onClose, periodDayNumber }) => {
   if (!date) return null;
 
   // Đảm bảo không bị trùng triệu chứng khi render
-  const symptomLabels = Array.from(
-    new Set(SYMPTOM_OPTIONS.map((s) => s.label))
-  );
-
   const handleSymptomChange = (symptom) => {
     setSelectedSymptoms((prev) =>
       prev.includes(symptom)
@@ -127,10 +114,8 @@ const LogModal = ({ date, existingLog, onSave, onClose, periodDayNumber }) => {
         <div className="modal-section">
           <h4>Triệu chứng hôm nay:</h4>
           <div className="symptoms-grid">
-            {SYMPTOM_OPTIONS.filter(
-              (opt, idx) => symptomLabels.indexOf(opt.label) === idx // loại trùng
-            ).map(({ label, icon }) => (
-              <label key={label} className="symptom-label">
+            {SYMPTOM_OPTIONS.map(({ value, label, icon }) => (
+              <label key={value} className="symptom-label">
                 <input
                   type="checkbox"
                   value={label}

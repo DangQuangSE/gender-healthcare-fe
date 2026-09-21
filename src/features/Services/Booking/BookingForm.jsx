@@ -23,17 +23,19 @@ import locale from "antd/es/date-picker/locale/vi_VN";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import "./BookingForm.css";
 import GradientButton from "../../../components/common/GradientButton";
-import api from "../../../configs/api";
+import {
+  getConsultants,
+  getServiceSchedule,
+} from "../../catalog/catalogApi";
+import bookingStorage from "../../../shared/storage/bookingStorage";
+import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
+import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
+import { BOOKING_FORM_TAB_LABELS } from "./BookingForm.constants";
 dayjs.extend(isSameOrBefore);
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { TextArea } = Input;
-
-const TAB_LABELS = {
-  morning: "Buổi sáng",
-  afternoon: "Buổi chiều",
-};
 
 const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   const [searchParams] = useSearchParams();
@@ -58,20 +60,14 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
       const from = dateRange[0].format("YYYY-MM-DD");
       const to = dateRange[1].format("YYYY-MM-DD");
 
-      console.log(" Fetching schedule data for service:", defaultServiceId);
-      api
-        .get("/schedules/slot-free-service", {
-          params: { service_id: defaultServiceId, from, to },
-        })
+      getServiceSchedule(defaultServiceId, from, to)
         .then((res) => {
           const parsed =
             typeof res.data === "string" ? JSON.parse(res.data) : res.data;
-          console.log(" Schedule data updated:", parsed);
           setServiceDetail(parsed.serviceDTO);
           setScheduleData(parsed.scheduleResponses || []);
         })
-        .catch((err) => {
-          console.error(" Lỗi khi gọi slot-free-service:", err);
+        .catch(() => {
           setScheduleData([]);
         });
     }
@@ -84,19 +80,18 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   // Listen for schedule refresh trigger
   useEffect(() => {
     const checkRefreshTrigger = () => {
-      const shouldRefresh = localStorage.getItem("shouldRefreshSchedule");
-      const lastBookedServiceId = localStorage.getItem("lastBookedServiceId");
+      const shouldRefresh = bookingStorage.get(STORAGE_KEYS.SHOULD_REFRESH_SCHEDULE);
+      const lastBookedServiceId = bookingStorage.get(STORAGE_KEYS.LAST_BOOKED_SERVICE_ID);
 
       if (
         shouldRefresh === "true" &&
         lastBookedServiceId === defaultServiceId
       ) {
-        console.log(" Refreshing schedule data after booking...");
         fetchScheduleData();
 
         // Clear the trigger
-        localStorage.removeItem("shouldRefreshSchedule");
-        localStorage.removeItem("lastBookedServiceId");
+        bookingStorage.remove(STORAGE_KEYS.SHOULD_REFRESH_SCHEDULE);
+        bookingStorage.remove(STORAGE_KEYS.LAST_BOOKED_SERVICE_ID);
       }
     };
 
@@ -115,40 +110,32 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
 
   // Fetch consultants list
   useEffect(() => {
-    api
-      .get("/admin/users?role=CONSULTANT")
+    getConsultants()
       .then((res) => {
-        console.log("Danh sách bác sĩ:", res.data);
         setConsultants(res.data || []);
 
         // Kiểm tra xem có bác sĩ đã được chọn từ ServiceDetail không
-        const selectedConsultantId = localStorage.getItem(
-          "selectedConsultantId"
+        const selectedConsultantId = bookingStorage.get(
+          STORAGE_KEYS.SELECTED_CONSULTANT_ID
         );
         if (selectedConsultantId) {
           setSelectedConsultantId(Number(selectedConsultantId));
-          console.log(
-            "Đã tự động chọn bác sĩ từ ServiceDetail:",
-            selectedConsultantId
-          );
         }
       })
-      .catch((err) => {
-        console.error("Lỗi khi lấy danh sách bác sĩ:", err);
+      .catch(() => {
+        setConsultants([]);
       });
   }, []);
 
   // Listen for consultant selection from ServiceDetail
   useEffect(() => {
     const handleConsultantSelected = () => {
-      const selectedConsultantId = localStorage.getItem("selectedConsultantId");
+      const selectedConsultantId = bookingStorage.get(
+        STORAGE_KEYS.SELECTED_CONSULTANT_ID
+      );
       if (selectedConsultantId) {
         setSelectedConsultantId(Number(selectedConsultantId));
         setConsultantUpdateTrigger((prev) => prev + 1); // Force re-render
-        console.log(
-          "BookingForm updated with selected consultant:",
-          selectedConsultantId
-        );
       }
     };
 
@@ -166,9 +153,9 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   // Clear selected consultant when component unmounts
   useEffect(() => {
     return () => {
-      localStorage.removeItem("selectedConsultantId");
-      localStorage.removeItem("selectedConsultantName");
-      localStorage.removeItem("selectedConsultantSpecialization");
+      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_ID);
+      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_NAME);
+      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION);
     };
   }, []);
 
@@ -210,7 +197,7 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
 
   const handleBooking = () => {
     if (!defaultServiceId || !selectedDay || !selectedTime || !selectedSlotId) {
-      message.warning("Vui lòng chọn đủ thông tin!");
+      message.warning(NOTIFICATION_MESSAGES.BOOKING_FORM.REQUIRED_SELECTION);
       return;
     }
 
@@ -227,23 +214,6 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
       note,
       consultantId: selectedConsultantId, // Thêm consultantId
     };
-
-    console.log(
-      "[DEBUG] Booking preview data with service type:",
-      bookingPreviewData
-    );
-    console.log(
-      "[DEBUG] selectedConsultantId trong BookingForm:",
-      selectedConsultantId
-    );
-    console.log(
-      "[DEBUG] localStorage selectedConsultantId:",
-      localStorage.getItem("selectedConsultantId")
-    );
-    console.log(
-      "[DEBUG] localStorage selectedConsultantName:",
-      localStorage.getItem("selectedConsultantName")
-    );
 
     navigate("/booking-confirmation", { state: bookingPreviewData });
   };
@@ -277,13 +247,13 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
           Chọn bác sĩ (tùy chọn)
         </Text>
         {selectedConsultantId &&
-          localStorage.getItem("selectedConsultantName") && (
+          bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME) && (
             <div
               key={consultantUpdateTrigger} // Force re-render when consultant changes
               className="consultant-selected-notification"
             >
-              ✓ Đã chọn: {localStorage.getItem("selectedConsultantName")} -{" "}
-              {localStorage.getItem("selectedConsultantSpecialization")}
+              ✓ Đã chọn: {bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME)} -{" "}
+              {bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION)}
             </div>
           )}
         <Select
@@ -322,7 +292,7 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
               const today = dayjs().startOf("day");
               const max = today.add(30, "day");
               if (!date || date.isBefore(today) || date.isAfter(max)) {
-                message.warning("Chỉ được chọn trong 1 tháng!");
+                message.warning(NOTIFICATION_MESSAGES.BOOKING_FORM.ONE_MONTH_ONLY);
                 return;
               }
               setDateRange([date.startOf("day"), date.add(30, "day")]);
@@ -378,7 +348,10 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
                 // else parts.evening.push(slot);
               });
               return Object.entries(parts).map(([key, list]) => (
-                <TabPane tab={TAB_LABELS[key] || key} key={key}>
+                <TabPane
+                  tab={BOOKING_FORM_TAB_LABELS[key] || key}
+                  key={key}
+                >
                   <div className="time-slots-grid">
                     {list.map((slot) => (
                       <Button

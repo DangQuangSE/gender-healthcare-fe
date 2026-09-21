@@ -45,7 +45,7 @@ export const loadingToastExample = async () => {
     
     // Update to success
     showToast.updateLoading(toastId, "Xử lý thành công!", "success");
-  } catch (error) {
+  } catch {
     // Update to error
     showToast.updateLoading(toastId, "Xử lý thất bại!", "error");
   }

@@ -18,9 +18,13 @@ import {
   SaveOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
-import { submitConsultationResult } from "../../api/medicalResultAPI";
+import { submitConsultationResult } from "../../features/medical/medicalResultApi";
 import "./MedicalResultFormConsulting.css";
-import api from "../../configs/api";
+import { getTreatmentProtocols } from "../../features/medical/medicalApi";
+import {
+  MEDICAL_RESULT_MESSAGES,
+} from "../../features/medical/medicalResultMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -45,10 +49,9 @@ const MedicalResultFormConsulting = ({
   const fetchTreatmentProtocols = async () => {
     try {
       setLoadingProtocols(true);
-      const response = await api.get("/treatment");
+      const response = await getTreatmentProtocols();
       setTreatmentProtocols(response.data || []);
-    } catch (error) {
-      console.error("Error fetching treatment protocols:", error);
+    } catch {
       setTreatmentProtocols([]);
     } finally {
       setLoadingProtocols(false);
@@ -75,35 +78,23 @@ const MedicalResultFormConsulting = ({
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
-      console.log("[DEBUG] Submitting consulting form data:", values);
-
       const submitData = {
         ...values,
-        appointmentDetailId: appointmentDetail?.id || 123,
+        appointmentDetailId: appointmentDetail?.id,
         resultType: "CONSULTATION",
         treatmentProtocolId: values.treatmentProtocolId || null,
       };
 
-      console.log("[DEBUG] Final submit data:", submitData);
-
-      // Call API /api/result/consultation
       const response = await submitConsultationResult(submitData);
-      message.success("Lưu kết quả khám bệnh thành công!");
+      message.success(MEDICAL_RESULT_MESSAGES.CONSULTATION_SAVE_SUCCESS);
       onSuccess?.(response.data);
     } catch (error) {
-      console.error("[ERROR] Submit failed:", error);
-      console.error("[ERROR] Error details:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
+      const errorMessage = getApiErrorMessage(
+        error,
+        MEDICAL_RESULT_MESSAGES.CONSULTATION_SAVE_ERROR_FALLBACK
+      );
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Có lỗi xảy ra khi lưu kết quả khám bệnh";
-
-      message.error("Lưu kết quả thất bại: " + errorMessage);
+      message.error(MEDICAL_RESULT_MESSAGES.SAVE_FAILED(errorMessage));
     } finally {
       setLoading(false);
     }
@@ -111,7 +102,7 @@ const MedicalResultFormConsulting = ({
 
   const handleReset = () => {
     form.resetFields();
-    message.info("Đã reset form");
+    message.info(MEDICAL_RESULT_MESSAGES.FORM_RESET);
   };
 
   return (
@@ -181,9 +172,13 @@ const MedicalResultFormConsulting = ({
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng nhập mô tả triệu chứng!",
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.DESCRIPTION_REQUIRED,
                   },
-                  { min: 10, message: "Mô tả phải có ít nhất 10 ký tự!" },
+                  {
+                    min: 10,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.DESCRIPTION_MIN,
+                  },
                 ]}
               >
                 <TextArea
@@ -198,8 +193,14 @@ const MedicalResultFormConsulting = ({
                 name="diagnosis"
                 label="Chẩn đoán"
                 rules={[
-                  { required: true, message: "Vui lòng nhập chẩn đoán!" },
-                  { min: 10, message: "Chẩn đoán phải có ít nhất 10 ký tự!" },
+                  {
+                    required: true,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.DIAGNOSIS_REQUIRED,
+                  },
+                  {
+                    min: 10,
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.DIAGNOSIS_MIN,
+                  },
                 ]}
               >
                 <TextArea
@@ -216,11 +217,12 @@ const MedicalResultFormConsulting = ({
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng nhập kế hoạch điều trị!",
+                    message:
+                      MEDICAL_RESULT_MESSAGES.VALIDATION.TREATMENT_PLAN_REQUIRED,
                   },
                   {
                     min: 10,
-                    message: "Kế hoạch điều trị phải có ít nhất 10 ký tự!",
+                    message: MEDICAL_RESULT_MESSAGES.VALIDATION.TREATMENT_PLAN_MIN,
                   },
                 ]}
               >

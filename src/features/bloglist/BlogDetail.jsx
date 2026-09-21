@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import RelatedArticlesSection from "./RelatedArticlesSection";
 import CommentSection from "../../components/CommentSection/CommentSection";
-import { likeBlog, viewBlogAndIncreaseCount } from "../../api/consultantAPI";
-import { fetchBlogSummary } from "../../api/commentAPI";
+import { likeBlog, viewBlogAndIncreaseCount } from "../blog/api/blogApi";
+import { fetchBlogSummary } from "../blog/api/commentApi";
+import storage from "../../shared/storage/storage";
+import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
+import CONTENT_MESSAGES from "../../shared/constants/contentMessages";
 import {
   EyeIcon,
   HeartIcon,
@@ -21,7 +24,7 @@ const BlogDetail = () => {
   const [commentCount, setCommentCount] = useState(0);
 
   // Load comment count for this blog
-  const loadCommentCount = async () => {
+  const loadCommentCount = useCallback(async () => {
     try {
       const response = await fetchBlogSummary();
       const commentData = response.data || [];
@@ -35,7 +38,7 @@ const BlogDetail = () => {
       console.error("Error loading comment count:", error);
       setCommentCount(0);
     }
-  };
+  }, [id]);
 
   // Handle comment count update when new comment is added
   const handleCommentCountUpdate = () => {
@@ -81,10 +84,9 @@ const BlogDetail = () => {
 
         setArticle(transformedArticle);
 
-        // Load related articles from localStorage as fallback
-        const sampleArticles = JSON.parse(
-          localStorage.getItem("allArticles") || "[]"
-        );
+        // Use the last loaded list only as a fallback for related articles.
+        const sampleArticles =
+          storage.getJson(STORAGE_KEYS.ALL_ARTICLES, []) || [];
         const related = sampleArticles.filter(
           (item) => item.id.toString() !== id
         );
@@ -92,10 +94,9 @@ const BlogDetail = () => {
       } catch (error) {
         console.error(" Error loading blog detail:", error);
 
-        // Fallback to localStorage
-        const sampleArticles = JSON.parse(
-          localStorage.getItem("allArticles") || "[]"
-        );
+        // Fallback to the last loaded list when the detail request fails.
+        const sampleArticles =
+          storage.getJson(STORAGE_KEYS.ALL_ARTICLES, []) || [];
         const fallbackArticle = sampleArticles.find(
           (item) => item.id.toString() === id
         );
@@ -114,7 +115,7 @@ const BlogDetail = () => {
       loadBlogDetail();
       loadCommentCount();
     }
-  }, [id]);
+  }, [id, loadCommentCount]);
 
   // Handle like blog
   const handleLikeBlog = async () => {
@@ -132,7 +133,7 @@ const BlogDetail = () => {
 
       console.log(` Liked blog ${article.id}`);
     } catch (error) {
-      alert(error.message || "Không thể thích bài viết. Vui lòng thử lại sau.");
+      alert(error.message || CONTENT_MESSAGES.BLOG_LIKE_FAILED);
     } finally {
       setLiking(false);
     }

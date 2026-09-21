@@ -23,6 +23,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { getDoctorWorkingSchedule } from "./doctorWorkingHoursAPI";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 import "./DoctorWorkingHours.css";
 
 const { Panel } = Collapse;
@@ -42,7 +43,7 @@ const DoctorWorkingHours = () => {
       setDoctorSchedules(response || []);
     } catch (error) {
       console.error("Error fetching doctor schedules:", error);
-      message.error("Không thể tải lịch làm việc của bác sĩ");
+      message.error(NOTIFICATION_MESSAGES.DOCTOR.WORKING_HOURS_LOAD_FAILED);
       setDoctorSchedules([]);
     } finally {
       setLoading(false);

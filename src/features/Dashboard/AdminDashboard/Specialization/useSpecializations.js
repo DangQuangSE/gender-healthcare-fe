@@ -5,7 +5,8 @@ import {
   addSpecialization,
   updateSpecialization,
   deleteSpecialization,
-} from "./specializationAPI";
+} from "../../../catalog/api/specializationApi";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 /**
  * Custom hook for managing Specializations
@@ -31,7 +32,7 @@ export const useSpecializations = () => {
       setSpecializations(data);
     } catch (error) {
       console.error("Error loading specializations:", error);
-      message.error("Không thể tải danh sách specializations!");
+      message.error(NOTIFICATION_MESSAGES.SPECIALIZATION.LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export const useSpecializations = () => {
         // Update existing specialization
         console.log(" Updating specialization:", editingSpecialization.id);
         await updateSpecialization(editingSpecialization.id, values);
-        message.success("Cập nhật specialization thành công!");
+        message.success(NOTIFICATION_MESSAGES.SPECIALIZATION.UPDATE_SUCCESS);
       } else {
         // Add new specialization
         console.log(" Adding new specialization");
@@ -70,7 +71,7 @@ export const useSpecializations = () => {
           isActive: true, // Thêm isActive mặc định
         };
         await addSpecialization(specializationData);
-        message.success("Thêm specialization thành công!");
+        message.success(NOTIFICATION_MESSAGES.SPECIALIZATION.CREATE_SUCCESS);
       }
 
       // Close modal and reset form
@@ -89,7 +90,7 @@ export const useSpecializations = () => {
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
-        "Có lỗi xảy ra khi xử lý specialization!";
+        NOTIFICATION_MESSAGES.SPECIALIZATION.SAVE_FAILED;
       message.error(errorMessage);
     }
   };
@@ -98,12 +99,12 @@ export const useSpecializations = () => {
   const handleDeleteSpecialization = async (id) => {
     try {
       await deleteSpecialization(id);
-      message.success("Xóa specialization thành công!");
+      message.success(NOTIFICATION_MESSAGES.SPECIALIZATION.DELETE_SUCCESS);
       // Reload data
       await loadSpecializations();
     } catch (error) {
       console.error("Lỗi xóa specialization:", error);
-      message.error("Có lỗi xảy ra khi xóa specialization!");
+      message.error(NOTIFICATION_MESSAGES.SPECIALIZATION.DELETE_FAILED);
     }
   };
 

@@ -34,6 +34,8 @@ import {
   LaptopOutlined,
   NotificationOutlined,
 } from "@ant-design/icons";
+import storage from "../../../shared/storage/storage";
+import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
 
 const { Header, Content, Sider } = Layout;
 const { Title } = Typography;
@@ -46,14 +48,14 @@ function Staff() {
   const [form] = Form.useForm();
   const [selectedMenuItem, setSelectedMenuItem] = useState(() => {
     // Check if there's a saved menu item from chat widget navigation
-    const savedMenuItem = localStorage.getItem("staffSelectedMenuItem");
+    const savedMenuItem = storage.get(STORAGE_KEYS.STAFF_SELECTED_MENU_ITEM);
     console.log(
       " [STAFF] Checking localStorage staffSelectedMenuItem:",
       savedMenuItem
     );
     if (savedMenuItem) {
       console.log("[STAFF] Found saved menu item:", savedMenuItem);
-      localStorage.removeItem("staffSelectedMenuItem"); // Clear after use
+      storage.remove(STORAGE_KEYS.STAFF_SELECTED_MENU_ITEM); // Clear after use
       return savedMenuItem;
     }
     console.log(" [STAFF] No saved menu item, using default");
@@ -128,10 +130,6 @@ function Staff() {
       lastVisit: "2024-03-01",
     },
   ];
-
-  const handleCreateQA = () => {
-    setIsQAModalVisible(true);
-  };
 
   const handleAppointmentModalOk = () => {
     form.validateFields().then((values) => {

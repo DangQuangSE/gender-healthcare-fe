@@ -111,7 +111,7 @@ const PatientHistoryDemo = () => {
             description={
               <div>
                 <Text code style={{ fontSize: "12px" }}>
-                  GET /api/medical-profile/patient/{patientId}/history
+                  GET /api/medical-profile/patient/{selectedPatientId}/history
                 </Text>
                 <br />
                 <Text style={{ fontSize: "12px", color: "#666" }}>

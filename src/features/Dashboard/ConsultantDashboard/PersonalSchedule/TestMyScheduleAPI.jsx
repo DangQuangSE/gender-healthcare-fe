@@ -10,7 +10,7 @@ import {
   Spin,
 } from "antd";
 import { CalendarOutlined, ApiOutlined } from "@ant-design/icons";
-import { getMySchedule } from "../../../../api/consultantAPI";
+import { getMySchedule } from "../../../scheduling/scheduleApi";
 import dayjs from "dayjs";
 
 const { Title, Text, Paragraph } = Typography;

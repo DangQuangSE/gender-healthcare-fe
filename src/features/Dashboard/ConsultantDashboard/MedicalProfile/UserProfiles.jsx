@@ -32,7 +32,7 @@ const userProfileColumns = [
   {
     title: "Thao tác",
     key: "action",
-    render: (_, record) => (
+    render: () => (
       <Button icon={<EyeOutlined />} size="small">
         Xem chi tiết
       </Button>
@@ -52,4 +52,4 @@ const UserProfiles = () => {
   );
 };
 
-export default UserProfiles; 
+export default UserProfiles;

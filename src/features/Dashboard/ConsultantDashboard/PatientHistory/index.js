@@ -5,4 +5,4 @@ export { default as PatientDetailButton } from "./PatientDetailButton";
 export { default as PatientInfoCard } from "./PatientInfoCard";
 
 // Export API functions
-export * from "../../../../api/patientHistoryAPI";
+export * from "../../../medical/patientHistoryApi";

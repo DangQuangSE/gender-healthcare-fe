@@ -1,199 +1,121 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import "./ServiceList.css";
 import { Button } from "antd";
+import { useNavigate } from "react-router-dom";
+import {
+  getServices,
+  getServiceAverageRating,
+} from "../../../catalog/catalogApi";
+import SERVICE_MESSAGES from "../serviceMessages";
+import {
+  CONSULTING_SERVICE_TYPES,
+  SERVICE_TABS,
+} from "./ServiceList.constants";
+import "./ServiceList.css";
 
-// Thêm component hiển thị đánh giá sao
 const StarRating = ({ rating }) => {
-  const stars = [];
-  for (let i = 1; i <= 5; i++) {
-    stars.push(
-      <span key={i} className={i <= rating ? "star filled" : "star"}>
-        ★
-      </span>
-    );
-  }
-  return <div className="star-rating">{stars}</div>;
+  const roundedRating = Math.round(rating);
+
+  return (
+    <div className="star-rating" aria-label={`${rating} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span key={star} className={star <= roundedRating ? "star filled" : "star"}>
+          *
+        </span>
+      ))}
+    </div>
+  );
 };
 
-const TABS = {
-  ALL: "Tất cả dịch vụ",
-  CONSULTING: "Dịch vụ tư vấn",
-  TESTING: "Dịch vụ xét nghiệm",
-  COMBO: "Combo ",
+const getFilteredServices = (services, searchTerm, activeTab) => {
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const servicesByName = services.filter((service) =>
+    (service.name || "").toLowerCase().includes(normalizedSearch)
+  );
+
+  switch (activeTab) {
+    case "CONSULTING":
+      return servicesByName.filter(
+        (service) =>
+          CONSULTING_SERVICE_TYPES.includes(service.type) &&
+          !service.isCombo
+      );
+    case "TESTING":
+      return servicesByName.filter(
+        (service) => service.type?.startsWith("TESTING") && !service.isCombo
+      );
+    case "COMBO":
+      return servicesByName.filter((service) => service.isCombo === true);
+    default:
+      return servicesByName;
+  }
 };
 
 const ServiceList = () => {
   const [services, setServices] = useState([]);
+  const [serviceRatings, setServiceRatings] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("ALL");
-  const [serviceRatings, setServiceRatings] = useState({});
   const navigate = useNavigate();
 
-  // Fetch dịch vụ
   useEffect(() => {
-    axios
-      .get("/api/services")
-      .then((res) => {
-        setServices(res.data);
-        // Sau khi lấy danh sách dịch vụ, lấy đánh giá cho từng dịch vụ
-        res.data.forEach((service) => {
-          fetchServiceRating(service.id);
-        });
-      })
-      .catch((err) => {
-        console.error("Lỗi khi tải service:", err);
+    const loadServices = async () => {
+      try {
+        const response = await getServices();
+        setServices(Array.isArray(response.data) ? response.data : []);
+      } catch {
         setServices([]);
-      });
+      }
+    };
+
+    loadServices();
   }, []);
 
-  // Hàm lấy đánh giá trung bình cho dịch vụ
-  const fetchServiceRating = (serviceId) => {
-    axios
-      .get(`/api/feedback/average-rating/${serviceId}`)
-      .then((res) => {
-        setServiceRatings((prev) => ({
-          ...prev,
-          [serviceId]: {
-            averageRating: res.data.averageRating || 0,
-            totalRatings: res.data.totalAppointment || 0,
-          },
-        }));
-      })
-      .catch((err) => {
-        console.error(`Lỗi khi lấy đánh giá cho dịch vụ ${serviceId}:`, err);
-      });
-  };
+  useEffect(() => {
+    const loadRatings = async () => {
+      const ratings = await Promise.all(
+        services.map(async (service) => {
+          try {
+            const response = await getServiceAverageRating(service.id);
+            return [
+              service.id,
+              {
+                averageRating: Number(response.data?.averageRating || 0),
+                totalRatings: Number(response.data?.totalAppointment || 0),
+              },
+            ];
+          } catch {
+            return [service.id, { averageRating: 0, totalRatings: 0 }];
+          }
+        })
+      );
 
-  const filteredServices = services.filter((s) =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      setServiceRatings(Object.fromEntries(ratings));
+    };
 
-  const getTabServices = () => {
-    switch (activeTab) {
-      case "CONSULTING":
-        return filteredServices.filter(
-          (s) =>
-            (s.type === "CONSULTING" || s.type === "CONSULTING_ON") &&
-            !s.isCombo
-        );
-      case "TESTING":
-        return filteredServices.filter(
-          (s) => s.type?.startsWith("TESTING") && !s.isCombo
-        );
-      case "COMBO":
-        return filteredServices.filter((s) => s.isCombo === true);
-      default:
-        return filteredServices;
+    if (services.length > 0) {
+      loadRatings();
     }
-  };
+  }, [services]);
 
-  const renderServiceList = (list) => (
-    <div className="service-list-wrapper">
-      {list.map((service) => {
-        const isCombo = service.isCombo === true;
-        const discount = service.discountPercent || 0;
-        const basePrice = service.price || 0;
-        const rating = serviceRatings[service.id] || {
-          averageRating: 0,
-          totalRatings: 0,
-        };
-
-        let originalPrice = basePrice;
-        let finalPrice = basePrice;
-
-        if (isCombo && Array.isArray(service.subServices)) {
-          originalPrice = service.subServices.reduce(
-            (sum, s) => sum + (s.price || 0),
-            0
-          );
-          finalPrice = basePrice;
-        } else {
-          finalPrice = basePrice * (1 - discount / 100);
-        }
-
-        return (
-          <div
-            key={service.id}
-            className={`service-card ${isCombo ? "combo" : ""}`}
-          >
-            <div className="service-card-content">
-              <div className="left-info">
-                <div className="service-name-container">
-                  <h3 className="service-name">{service.name}</h3>
-                  {service.type === "CONSULTING_ON" && (
-                    <h2 className="online-tag">trực tuyến</h2>
-                  )}
-                </div>
-                <p className="desc">{service.description}</p>
-                <div className="price-block">
-                  {discount > 0 ? (
-                    <>
-                      <p>
-                        <span>Giá gốc:</span>{" "}
-                        <span className="original-price">
-                          {originalPrice.toLocaleString()} đ
-                        </span>
-                      </p>
-                      <p>
-                        <strong>Giá sau giảm:</strong>{" "}
-                        <span className="price-highlight">
-                          {finalPrice.toLocaleString()} đ
-                        </span>
-                      </p>
-                    </>
-                  ) : (
-                    <p>
-                      <strong>Giá:</strong>{" "}
-                      <span className="price-highlight">
-                        {finalPrice.toLocaleString()} đ
-                      </span>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="right-action">
-                <Button
-                  className="booking-button"
-                  onClick={() => navigate(`/service-detail/${service.id}`)}
-                >
-                  <span>Đặt Lịch Hẹn</span>
-                </Button>
-                <div className="service-rating">
-                  <StarRating rating={rating.averageRating} />
-                  <span className="rating-text">
-                    {rating.averageRating.toFixed(1)} ({rating.totalRatings}{" "}
-                    đánh giá)
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  const visibleServices = getFilteredServices(services, searchTerm, activeTab);
 
   return (
     <div className="service-page-container">
       <div className="service-search-box">
         <input
           type="text"
-          placeholder=" Tìm kiếm dịch vụ..."
+          placeholder={SERVICE_MESSAGES.SEARCH_PLACEHOLDER}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(event) => setSearchTerm(event.target.value)}
         />
       </div>
 
       <div className="service-tab-buttons">
-        {Object.entries(TABS).map(([key, label]) => (
+        {Object.entries(SERVICE_TABS).map(([key, label]) => (
           <button
             key={key}
-            className={`service-tab-button ${
-              activeTab === key ? "active" : ""
-            }`}
+            type="button"
+            className={`service-tab-button ${activeTab === key ? "active" : ""}`}
             onClick={() => setActiveTab(key)}
           >
             {label}
@@ -201,7 +123,86 @@ const ServiceList = () => {
         ))}
       </div>
 
-      {renderServiceList(getTabServices())}
+      {visibleServices.length === 0 ? (
+        <p>{SERVICE_MESSAGES.EMPTY}</p>
+      ) : (
+        <div className="service-list-wrapper">
+          {visibleServices.map((service) => {
+            const isCombo = service.isCombo === true;
+            const discount = Number(service.discountPercent || 0);
+            const basePrice = Number(service.price || 0);
+            const originalPrice = isCombo && Array.isArray(service.subServices)
+              ? service.subServices.reduce((sum, item) => sum + Number(item.price || 0), 0)
+              : basePrice;
+            const finalPrice = isCombo
+              ? basePrice
+              : basePrice * (1 - discount / 100);
+            const rating = serviceRatings[service.id] || {
+              averageRating: 0,
+              totalRatings: 0,
+            };
+
+            return (
+              <article
+                key={service.id}
+                className={`service-card ${isCombo ? "combo" : ""}`}
+              >
+                <div className="service-card-content">
+                  <div className="left-info">
+                    <div className="service-name-container">
+                      <h3 className="service-name">{service.name}</h3>
+                      {service.type === "CONSULTING_ON" && (
+                        <span className="online-tag">Online</span>
+                      )}
+                    </div>
+                    <p className="desc">{service.description}</p>
+                    <div className="price-block">
+                      {discount > 0 && !isCombo ? (
+                        <>
+                          <p>
+                            <span>{SERVICE_MESSAGES.ORIGINAL_PRICE}:</span>{" "}
+                            <span className="original-price">
+                              {originalPrice.toLocaleString()} VND
+                            </span>
+                          </p>
+                          <p>
+                            <strong>{SERVICE_MESSAGES.DISCOUNTED_PRICE}:</strong>{" "}
+                            <span className="price-highlight">
+                              {finalPrice.toLocaleString()} VND
+                            </span>
+                          </p>
+                        </>
+                      ) : (
+                        <p>
+                          <strong>{SERVICE_MESSAGES.PRICE}:</strong>{" "}
+                          <span className="price-highlight">
+                            {finalPrice.toLocaleString()} VND
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="right-action">
+                    <Button
+                      className="booking-button"
+                      onClick={() => navigate(`/service-detail/${service.id}`)}
+                    >
+                      <span>{SERVICE_MESSAGES.BOOK}</span>
+                    </Button>
+                    <div className="service-rating">
+                      <StarRating rating={rating.averageRating} />
+                      <span className="rating-text">
+                        {rating.averageRating.toFixed(1)} ({rating.totalRatings})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

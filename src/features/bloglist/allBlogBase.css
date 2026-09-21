@@ -1,0 +1,214 @@
+.medpro-all-blog-wrapper {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* Reverted to original font stack */
+}
+
+.medpro-all-blog-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Search and Filter Styles */
+.search-filter-container {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  justify-content: center;
+  margin-bottom: 32px;
+  padding: 0 20px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.blog-search-container {
+  flex: 1;
+  max-width: 50vw;
+  min-width: 300px;
+  display: flex;
+  align-items: center;
+}
+
+.blog-search-container .ant-input-search {
+  width: 100%;
+  height: 40px;
+}
+
+.blog-search-container .ant-input-search .ant-input {
+  height: 40px;
+  padding: 8px 2px 20px;
+}
+
+.blog-search-container .ant-input-search .ant-input-search-button {
+  height: 40px;
+  padding: 0 16px;
+  background: #0f3a5b;
+  border-color: #0f3a5b;
+  color: white;
+}
+
+.blog-search-container .ant-input-search .ant-input:focus {
+  border-color: #0f3a5b;
+  box-shadow: 0 0 0 2px rgba(15, 58, 91, 0.2);
+}
+
+.blog-search-container .ant-input-search .ant-input {
+  border-color: #d1d5db;
+}
+
+.blog-search-container .ant-input-search .ant-input-search-button:hover {
+  background: #1a4d73;
+  border-color: #1a4d73;
+  box-shadow: 0 4px 12px rgba(15, 58, 91, 0.3);
+}
+
+.blog-tag-filter-group {
+  flex: 1;
+  max-width: 50vw;
+  min-width: 300px;
+  display: flex;
+  align-items: center;
+}
+
+.blog-tag-filter-group .ant-select {
+  width: 100%;
+  height: 40px;
+}
+
+.blog-tag-filter-group .ant-select .ant-select-selector {
+  height: 40px !important;
+  padding: 6px 12px !important;
+  display: flex;
+  align-items: center;
+  border-color: #0f3a5b !important;
+}
+
+.blog-tag-filter-group .ant-select.ant-select-focused .ant-select-selector {
+  border-color: #0f3a5b !important;
+  box-shadow: 0 0 0 2px rgba(15, 58, 91, 0.2) !important;
+}
+
+.blog-tag-filter-group .ant-select-multiple .ant-select-selection-item {
+  background: #0f3a5b20;
+  color: #0f3a5b;
+  border-radius: 4px;
+}
+
+/* Responsive Design for Search and Filter */
+@media (max-width: 768px) {
+  .search-filter-container {
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 16px;
+    max-width: 100%;
+  }
+
+  .blog-search-container,
+  .blog-tag-filter-group {
+    max-width: 100%;
+    min-width: auto;
+  }
+
+  .blog-search-container .ant-input-search .ant-input {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+
+  .blog-search-container .ant-input-search .ant-input-search-button {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .blog-search-container .ant-input-search .ant-input {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .blog-search-container .ant-input-search .ant-input-search-button {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+.medpro-all-blog-main-nav a:hover {
+  color: #1e40af;
+}
+
+/* Main Layout */
+.medpro-all-blog-main {
+  padding: 32px 0;
+}
+
+.medpro-all-blog-read-more-link {
+  color: #0283f5;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.medpro-all-blog-read-more-link:hover {
+  color: #2753d0;
+}
+
+/* Main Sections */
+.medpro-all-blog-main-sections {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Service Section */
+.medpro-all-blog-service-section {
+  margin-bottom: 48px;
+}
+
+.medpro-all-blog-section-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f3a5b;
+  margin: 40px 0 32px 0;
+  text-align: center;
+  padding-left: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.medpro-all-blog-section-description {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f3a5b;
+  margin: 40px 0 32px 0;
+  text-align: center;
+  padding-left: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Consistent spacing for all sections */
+.medpro-all-blog-medical-section,
+.medpro-all-blog-service-section,
+.medpro-all-blog-medical-knowledge-section {
+  margin: 60px 0;
+  padding: 0;
+}
+
+/* Section titles alignment - all same */
+.medpro-all-blog-section-title {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* First section title (Tin Y Tế) - same as others */
+.medpro-all-blog-main > .medpro-all-blog-section-title:first-child {
+  margin: 20px 0 40px 0 !important;
+  max-width: 1200px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 0 20px;
+}

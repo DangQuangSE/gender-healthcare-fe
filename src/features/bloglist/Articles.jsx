@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from "react";
 import "./Articles.css";
 import { Link } from "react-router-dom";
-import { likeBlog } from "../../api/consultantAPI";
-import { fetchBlogSummary } from "../../api/commentAPI";
+import { likeBlog, fetchBlogs } from "../blog/api/blogApi";
+import { fetchBlogSummary } from "../blog/api/commentApi";
 import {
   EyeIcon,
   HeartIcon,
   CommentIcon,
 } from "../../components/Icons/BlogIcons";
-import { API_BASE_URL } from "../../configs/serverConfig";
+import { unwrapApiResponse } from "../../shared/api/response";
+import storage from "../../shared/storage/storage";
+import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
+import CONTENT_MESSAGES from "../../shared/constants/contentMessages";
+
+const getBlogsFromResponse = (response) => {
+  const data = unwrapApiResponse(response?.data);
+  return data?.content || (Array.isArray(data) ? data : []);
+};
 
 const Articles = () => {
   const [articles, setArticles] = useState([]);
@@ -31,8 +39,7 @@ const Articles = () => {
       });
 
       setCommentCounts(commentMap);
-    } catch (error) {
-      console.error("Error loading comment counts:", error);
+    } catch {
       setCommentCounts({});
     }
   };
@@ -47,7 +54,7 @@ const Articles = () => {
     try {
       setLikingBlogs((prev) => new Set([...prev, blogId]));
 
-      const response = await likeBlog(blogId);
+      await likeBlog(blogId);
 
       // Update local state optimistically
       setArticles((prevArticles) =>
@@ -62,29 +69,17 @@ const Articles = () => {
       setTimeout(async () => {
         try {
           // Reload the articles data from API
-          const response = await fetch(`${API_BASE_URL}/blog?page=0&size=20`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+          const response = await fetchBlogs(0, 20);
 
-          if (response.ok) {
-            const data = await response.json();
-            let blogs = [];
-            if (data?.content) {
-              blogs = data.content;
-            } else if (Array.isArray(data)) {
-              blogs = data;
-            }
+          const blogs = getBlogsFromResponse(response);
 
-            // Sort and transform like before
-            const topBlogs = blogs
-              .filter((blog) => blog.status === "PUBLISHED")
-              .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
-              .slice(0, 5);
+          // Sort and transform like before
+          const topBlogs = blogs
+            .filter((blog) => blog.status === "PUBLISHED")
+            .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+            .slice(0, 5);
 
-            const transformedArticles = topBlogs.map((blog, index) => ({
+          const transformedArticles = topBlogs.map((blog, index) => ({
               id: blog.id,
               title: blog.title,
               excerpt: blog.content
@@ -106,15 +101,14 @@ const Articles = () => {
               featured: index === 0,
             }));
 
-            setArticles(transformedArticles);
-          }
+          setArticles(transformedArticles);
         } catch (reloadError) {
           console.error(`Error reloading articles:`, reloadError);
         }
       }, 2000);
     } catch (error) {
       // Show user-friendly error message
-      alert(error.message || "Không thể thích bài viết. Vui lòng thử lại sau.");
+      alert(error.message || CONTENT_MESSAGES.BLOG_LIKE_FAILED);
       // Revert optimistic update on error
       setArticles((prevArticles) =>
         prevArticles.map((article) =>
@@ -141,26 +135,9 @@ const Articles = () => {
         setLoading(true);
         // Lấy nhiều blogs để có thể sort theo viewCount
         // Gọi API trực tiếp không qua api instance để tránh CORS
-        const response = await fetch(`${API_BASE_URL}/blog?page=0&size=20`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            // Không gửi Authorization header để tránh CORS preflight
-          },
-        });
+        const response = await fetchBlogs(0, 20);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        let blogs = [];
-        if (data?.content) {
-          blogs = data.content;
-        } else if (Array.isArray(data)) {
-          blogs = data;
-        }
+        const blogs = getBlogsFromResponse(response);
 
         // Sort theo viewCount giảm dần và lấy top 5
         const topBlogs = blogs
@@ -193,11 +170,11 @@ const Articles = () => {
         setArticles(transformedArticles);
 
         // Lưu vào localStorage để dùng ở BlogDetail
-        localStorage.setItem(
-          "allArticles",
-          JSON.stringify(transformedArticles)
+        storage.setJson(
+          STORAGE_KEYS.ALL_ARTICLES,
+          transformedArticles
         );
-      } catch (error) {
+      } catch {
         // Fallback to empty array if API fails
         setArticles([]);
       } finally {

@@ -4,8 +4,9 @@ import "@splidejs/react-splide/css";
 import { AutoScroll } from "@splidejs/splide-extension-auto-scroll";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
-import api from "../../../configs/api";
 import doctor1 from "../../../assets/images/doctor1.jpg";
+import TESTIMONIAL_MESSAGES from "./testimonialsMessages";
+import { getConsultants } from "../../../features/catalog/catalogApi";
 import "./Testimonials.css";
 
 const Testimonials = () => {
@@ -19,12 +20,10 @@ const Testimonials = () => {
     const fetchConsultants = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/consultants");
-        console.log("Consultants data:", response.data);
+        const response = await getConsultants();
         setConsultants(response.data || []);
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách bác sĩ:", error);
-        message.error("Không thể tải danh sách bác sĩ");
+      } catch {
+        message.error(TESTIMONIAL_MESSAGES.LOAD_FAILED);
         setConsultants([]);
       } finally {
         setLoading(false);
@@ -45,9 +44,9 @@ const Testimonials = () => {
     return (
       <section className="doctors-section section">
         <div className="container">
-          <h3 className="doctors-section-title">ĐỘI NGŨ BÁC SĨ</h3>
+          <h3 className="doctors-section-title">{TESTIMONIAL_MESSAGES.TITLE}</h3>
           <p className="section-subtitle-description">
-            Đang tải danh sách bác sĩ...
+            {TESTIMONIAL_MESSAGES.LOADING}
           </p>
         </div>
       </section>
@@ -57,18 +56,11 @@ const Testimonials = () => {
   return (
     <section className="doctors-section section">
       <div className="container">
-        <h3 className="doctors-section-title">ĐỘI NGŨ BÁC SĨ</h3>
+        <h3 className="doctors-section-title">{TESTIMONIAL_MESSAGES.TITLE}</h3>
         <p className="section-subtitle-description">
-          Đội ngũ bác sĩ chuyên khoa của chúng tôi luôn sẵn sàng hỗ trợ bạn chăm
-          sóc sức khỏe.
+          {TESTIMONIAL_MESSAGES.DESCRIPTION}
         </p>
 
-        {console.log(
-          "Consultants length:",
-          consultants.length,
-          "Data:",
-          consultants
-        )}
         {consultants.length > 0 ? (
           <Splide
             ref={splideRef}
@@ -93,7 +85,7 @@ const Testimonials = () => {
               },
             }}
             extensions={{ AutoScroll }}
-            aria-label="Carousel bác sĩ"
+            aria-label={TESTIMONIAL_MESSAGES.CAROUSEL_LABEL}
             className="testimonials-splide"
           >
             {consultants.map((consultant) => (
@@ -103,7 +95,7 @@ const Testimonials = () => {
                     <div className="doctor-avatar">
                       <img
                         src={consultant.imageUrl || consultant.img || doctor1}
-                        alt={consultant.fullname || "Bác sĩ"}
+                        alt={consultant.fullname || TESTIMONIAL_MESSAGES.UNKNOWN_NAME}
                       />
                     </div>
                     <div className="doctor-stats">
@@ -116,15 +108,15 @@ const Testimonials = () => {
                     </div>
                     <div className="doctor-info">
                       <h3 className="doctor-name">
-                        {consultant.fullname || "Chưa có tên"}
+                        {consultant.fullname || TESTIMONIAL_MESSAGES.UNKNOWN_NAME}
                       </h3>
                       <p className="doctor-title">
                         {consultant.specializationNames ||
-                          "Chưa có chuyên khoa"}
+                          TESTIMONIAL_MESSAGES.UNKNOWN_SPECIALIZATION}
                       </p>
                       <div className="doctor-details">
                         <div className="specialist-badge">
-                          <span>Chăm sóc Sức khỏe Giới Tính</span>
+                          <span>{TESTIMONIAL_MESSAGES.HEALTHCARE_SPECIALTY}</span>
                         </div>
                       </div>
                     </div>
@@ -133,7 +125,7 @@ const Testimonials = () => {
                     className="consult-btn"
                     onClick={() => handleConsultation(consultant)}
                   >
-                    Xem dịch vụ
+                    {TESTIMONIAL_MESSAGES.VIEW_SERVICES}
                   </button>
                 </div>
               </SplideSlide>
@@ -141,7 +133,7 @@ const Testimonials = () => {
           </Splide>
         ) : (
           <div className="no-consultants">
-            <p>Hiện tại chưa có bác sĩ nào trong hệ thống.</p>
+            <p>{TESTIMONIAL_MESSAGES.EMPTY}</p>
           </div>
         )}
       </div>

@@ -25,8 +25,9 @@ import {
   fetchAllConfigs,
   updateConfig,
   deleteConfig,
-} from "../../../../api/configAPI";
+} from "../../../catalog/configApi";
 import "./ConfigManagement.css";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const { Title } = Typography;
 
@@ -50,7 +51,7 @@ const ConfigManagement = () => {
       setConfigs(response.data || []);
     } catch (error) {
       console.error("Error loading configs:", error);
-      message.error("Không thể tải danh sách cấu hình");
+      message.error(NOTIFICATION_MESSAGES.CONFIG.LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -64,14 +65,14 @@ const ConfigManagement = () => {
       if (editingConfig) {
         // Update existing config - chỉ gửi value
         await updateConfig(editingConfig.id, { value: values.value });
-        message.success("Cập nhật cấu hình thành công!");
+        message.success(NOTIFICATION_MESSAGES.CONFIG.UPDATE_SUCCESS);
       } else {
         // Create new config - gửi cả name và value
         await createConfig({
           name: values.name,
           value: values.value,
         });
-        message.success("Tạo cấu hình thành công!");
+        message.success(NOTIFICATION_MESSAGES.CONFIG.CREATE_SUCCESS);
       }
 
       setModalVisible(false);
@@ -82,7 +83,9 @@ const ConfigManagement = () => {
       console.error("Error saving config:", error);
       console.error("Error response:", error.response?.data);
       message.error(
-        editingConfig ? "Cập nhật cấu hình thất bại!" : "Tạo cấu hình thất bại!"
+        editingConfig
+          ? NOTIFICATION_MESSAGES.CONFIG.UPDATE_FAILED
+          : NOTIFICATION_MESSAGES.CONFIG.CREATE_FAILED
       );
     }
   };
@@ -91,11 +94,11 @@ const ConfigManagement = () => {
   const handleDelete = async (id) => {
     try {
       await deleteConfig(id);
-      message.success("Xóa cấu hình thành công!");
+      message.success(NOTIFICATION_MESSAGES.CONFIG.DELETE_SUCCESS);
       loadConfigs();
     } catch (error) {
       console.error("Error deleting config:", error);
-      message.error("Xóa cấu hình thất bại!");
+      message.error(NOTIFICATION_MESSAGES.CONFIG.DELETE_FAILED);
     }
   };
 

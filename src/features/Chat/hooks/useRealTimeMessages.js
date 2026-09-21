@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import unifiedChatAPI from "../unifiedChatAPI";
+import { POLLING_INTERVALS } from "./useRealTimeMessages.constants";
 
 // Simple UUID generator for client-side message IDs
 const generateClientId = () => {
@@ -20,32 +21,12 @@ export const useRealTimeMessages = (
   const [error, setError] = useState(null);
   const [lastMessageId, setLastMessageId] = useState(null);
 
-  // Unique instance identifier for debugging
-  const instanceId = useRef(
-    `${isStaff ? "STAFF" : "CUSTOMER"}_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 5)}`
-  );
-
-  console.log(`🔧 [REAL-TIME] Hook instance created:`, {
-    instanceId: instanceId.current,
-    sessionId,
-    isStaff,
-    isActive,
-  });
 
   // Refs for cleanup and optimization
   const pollingIntervalRef = useRef(null);
   const lastFetchTimeRef = useRef(0);
   const messageIdsRef = useRef(new Set());
   const isUnmountedRef = useRef(false);
-
-  // Smart polling configuration
-  const POLLING_INTERVALS = {
-    ACTIVE: 2000, // 2s when actively chatting
-    IDLE: 5000, // 5s when idle
-    BACKGROUND: 10000, // 10s when tab not focused
-  };
 
   /**
    * Transform API message to UI format
@@ -119,17 +100,6 @@ export const useRealTimeMessages = (
               msg.clientId && existingClientIds.has(msg.clientId);
 
             if (isDuplicateById || isDuplicateByClientId) {
-              // Only log if this is actually a duplicate (not just existing message from polling)
-              if (prev.length > 0) {
-                console.log("[REAL-TIME] Skipping duplicate message:", {
-                  instanceId: instanceId.current,
-                  id: msg.id,
-                  clientId: msg.clientId,
-                  message: msg.message.substring(0, 50),
-                  isDuplicateById,
-                  isDuplicateByClientId,
-                });
-              }
               return false;
             }
             return true;
@@ -161,21 +131,10 @@ export const useRealTimeMessages = (
             setLastMessageId(allMessages[allMessages.length - 1].id);
           }
 
-          console.log(`📥 [REAL-TIME] Total messages: ${allMessages.length}`, {
-            instanceId: instanceId.current,
-            sessionId,
-            isStaff,
-            messageIds: allMessages.map((m) => ({
-              id: m.id,
-              message: m.message.substring(0, 20),
-              timestamp: m.timestamp,
-            })),
-          });
           return allMessages;
         });
       } catch (err) {
         if (!isUnmountedRef.current) {
-          console.error(" [REAL-TIME] Error fetching messages:", err);
           setError(err.message);
         }
       }
@@ -220,11 +179,6 @@ export const useRealTimeMessages = (
           existingMap.has(`clientId_${transformedMessage.clientId}`);
 
         if (isDuplicateById || isDuplicateByClientId) {
-          console.log("⚠️ [REAL-TIME] Duplicate message detected, skipping:", {
-            id: transformedMessage.id,
-            clientId: transformedMessage.clientId,
-            message: transformedMessage.message.substring(0, 50),
-          });
           return prev;
         }
 
@@ -251,7 +205,6 @@ export const useRealTimeMessages = (
           setLastMessageId(allMessages[allMessages.length - 1].id);
         }
 
-        console.log(" [REAL-TIME] Added message:", transformedMessage);
         return allMessages;
       });
     },
@@ -265,7 +218,6 @@ export const useRealTimeMessages = (
     setMessages([]);
     messageIdsRef.current.clear();
     setLastMessageId(null);
-    console.log("[REAL-TIME] Messages cleared");
   }, []);
 
   /**
@@ -294,16 +246,14 @@ export const useRealTimeMessages = (
     };
 
     pollingIntervalRef.current = setInterval(poll, getPollingInterval());
-    console.log(`[REAL-TIME] Polling started for session: ${sessionId}`);
-  }, [sessionId, isActive, fetchMessages]);
+  }, [isActive, fetchMessages]);
 
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
-      console.log(`⏹️ [REAL-TIME] Polling stopped for session: ${sessionId}`);
     }
-  }, [sessionId]);
+  }, []);
 
   // Initial load and polling setup
   useEffect(() => {
@@ -333,15 +283,8 @@ export const useRealTimeMessages = (
   // Handle visibility change for smart polling
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (sessionId && isActive) {
-        if (document.hidden) {
-          console.log("📱 [REAL-TIME] Tab hidden - reducing polling frequency");
-        } else {
-          console.log(
-            "📱 [REAL-TIME] Tab visible - increasing polling frequency"
-          );
-          fetchMessages(); // Immediate fetch when tab becomes visible
-        }
+      if (sessionId && isActive && !document.hidden) {
+        fetchMessages(); // Immediate fetch when tab becomes visible
       }
     };
 

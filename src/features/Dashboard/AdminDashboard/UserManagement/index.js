@@ -2,4 +2,4 @@
 export { default as CreateUserModal } from "./CreateUserModal";
 export { default as UserManagement } from "./UserManagement";
 export { useUsers } from "./useUsers";
-export * from "./userAPI";
+export * from "../../../admin/api/userApi";

@@ -43,7 +43,6 @@ function ConsultantDashboard() {
     }
   }
 
-  const user = useSelector((state) => state.user);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();

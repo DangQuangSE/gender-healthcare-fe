@@ -1,4 +1,4 @@
-import api from "../../../../configs/api";
+import apiClient from "../../../../shared/api/client";
 
 /**
  * Get doctor working schedule by date
@@ -7,7 +7,7 @@ import api from "../../../../configs/api";
  */
 export const getDoctorWorkingSchedule = async (date) => {
   try {
-    const response = await api.get(`/schedules/doctors-working`, {
+    const response = await apiClient.get(`/v1/schedules/doctors`, {
       params: { date },
     });
     return response.data;

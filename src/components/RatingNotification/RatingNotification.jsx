@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { notification, Button } from "antd";
 import { StarOutlined } from "@ant-design/icons";
-import api from "../../configs/api";
+import authStorage from "../../shared/storage/authStorage";
+import { getAppointmentsByStatus } from "../../features/appointments/appointmentApi";
 import RatingModal from "../RatingModal/RatingModal";
 import "./RatingNotification.css";
 
 const RatingNotification = () => {
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [appointmentToRate, setAppointmentToRate] = useState(null);
-  const [loading, setLoading] = useState(false);
   const hasShownRatingNotification = useRef(false);
   const [notificationApi, contextHolder] = notification.useNotification();
 
@@ -23,8 +23,7 @@ const RatingNotification = () => {
   };
 
   // Hàm mở modal đánh giá
-  const openRatingModal = (appointment) => {
-    console.log("Opening rating modal for appointment:", appointment);
+  const openRatingModal = useCallback((appointment) => {
     // Đảm bảo appointment có đủ thông tin cần thiết
     const enhancedAppointment = {
       ...appointment,
@@ -37,31 +36,24 @@ const RatingNotification = () => {
     setTimeout(() => {
       setRatingModalVisible(true);
     }, 50);
-  };
+  }, []);
 
   // Fetch unrated completed appointments
-  const fetchUnratedAppointments = async () => {
+  const fetchUnratedAppointments = useCallback(async () => {
     if (hasShownRatingNotification.current) return;
 
-    try {
-      setLoading(true);
-      console.log("Fetching completed appointments...");
-
-      // Sử dụng endpoint by-status thay vì /unrated
-      const response = await api.get("/appointment/by-status?status=COMPLETED");
-      console.log("API response:", response);
+    // Sử dụng endpoint by-status thay vì /unrated
+      const response = await getAppointmentsByStatus("COMPLETED");
 
       // Lọc các cuộc hẹn đã hoàn thành nhưng chưa đánh giá
       const unratedAppointments = response.data.filter(
         (appointment) => !appointment.isRated
       );
 
-      console.log("Filtered unrated appointments:", unratedAppointments);
 
       if (unratedAppointments && unratedAppointments.length > 0) {
         // Lấy cuộc hẹn gần nhất cần đánh giá
         const appointmentToRate = unratedAppointments[0];
-        console.log("Showing notification for appointment:", appointmentToRate);
 
         // Hiển thị thông báo
         const key = "rating-reminder";
@@ -88,7 +80,6 @@ const RatingNotification = () => {
             <Button
               type="primary"
               onClick={() => {
-                console.log("Rating button clicked");
                 notificationApi.destroy(key);
                 // Đảm bảo notification đóng trước khi mở modal
                 setTimeout(() => {
@@ -162,15 +153,11 @@ const RatingNotification = () => {
 
       //   hasShownRatingNotification.current = true;
       // }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [notificationApi, openRatingModal]);
 
   useEffect(() => {
     // Chỉ fetch khi người dùng đã đăng nhập
-    const token = localStorage.getItem("token");
-    console.log("RatingNotification useEffect, token exists:", !!token);
+    const token = authStorage.getToken();
 
     if (token) {
       // Gọi hàm fetch sau một khoảng thời gian ngắn
@@ -178,11 +165,7 @@ const RatingNotification = () => {
         fetchUnratedAppointments();
       }, 3000); // 3 giây
     }
-  }, []);
-
-  // Thêm log để kiểm tra trạng thái modal
-  console.log("Modal visible:", ratingModalVisible);
-  console.log("Appointment to rate:", appointmentToRate);
+  }, [fetchUnratedAppointments]);
 
   return (
     <>
@@ -191,7 +174,6 @@ const RatingNotification = () => {
       <RatingModal
         visible={ratingModalVisible}
         onClose={() => {
-          console.log("Closing rating modal");
           setRatingModalVisible(false);
         }}
         appointment={appointmentToRate}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Row,
@@ -14,9 +14,10 @@ import {
   Modal,
   Button,
 } from "antd";
-import { getPatientMedicalHistory } from "../../../../api/patientHistoryAPI";
+import { getPatientMedicalHistory } from "../../../medical/patientHistoryApi";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const { Title, Text } = Typography;
 
@@ -27,7 +28,7 @@ const PatientMedicalHistory = ({ patientId }) => {
   const [pageSize, setPageSize] = useState(5);
 
   // Load patient medical history
-  const loadPatientHistory = async (page = 0, size = 5) => {
+  const loadPatientHistory = useCallback(async (page = 0, size = 5) => {
     if (!patientId) return;
 
     setLoading(true);
@@ -40,15 +41,15 @@ const PatientMedicalHistory = ({ patientId }) => {
       console.log("[PATIENT_HISTORY] Loaded successfully:", response.data);
     } catch (error) {
       console.error(" [PATIENT_HISTORY] Error loading patient history:", error);
-      toast.error("Không thể tải lịch sử khám bệnh");
+      toast.error(NOTIFICATION_MESSAGES.PATIENT_HISTORY.LOAD_FAILED);
     } finally {
       setLoading(false);
     }
-  };
+  }, [patientId]);
 
   useEffect(() => {
     loadPatientHistory(currentPage, pageSize);
-  }, [patientId, currentPage, pageSize]);
+  }, [loadPatientHistory, currentPage, pageSize]);
 
   // Handle pagination change
   const handlePageChange = (page, size) => {

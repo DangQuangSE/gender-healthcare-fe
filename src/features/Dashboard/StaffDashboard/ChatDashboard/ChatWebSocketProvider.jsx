@@ -1,29 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import chatWebSocketService from "./websocketService";
-import { chatNotificationService } from "./ChatNotification";
+import { chatNotificationService } from "./chatNotificationService";
+import ChatWebSocketContext from "./ChatWebSocketContext";
 
 /**
  * WebSocket Context Provider cho Staff Dashboard
  * Tự động kết nối WebSocket khi staff login và duy trì connection
  */
-const ChatWebSocketContext = createContext({
-  connected: false,
-  connecting: false,
-  connect: () => {},
-  disconnect: () => {},
-  service: null,
-});
-
-export const useChatWebSocket = () => {
-  const context = useContext(ChatWebSocketContext);
-  if (!context) {
-    throw new Error(
-      "useChatWebSocket must be used within ChatWebSocketProvider"
-    );
-  }
-  return context;
-};
-
 export const ChatWebSocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);

@@ -15,12 +15,13 @@ import {
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
-import { registerSchedule } from "../../../../api/consultantAPI";
+import { registerSchedule } from "../../../scheduling/scheduleApi";
 import "./ScheduleModal.css";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const { Title, Text } = Typography;
 
-const ScheduleModal = ({ visible, onCancel, onSuccess, userId }) => {
+const ScheduleModal = ({ visible, onCancel, onSuccess }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [scheduleItems, setScheduleItems] = useState([
@@ -63,7 +64,7 @@ const ScheduleModal = ({ visible, onCancel, onSuccess, userId }) => {
       );
 
       if (validItems.length === 0) {
-        toast.error("Vui lòng thêm ít nhất một ca làm việc!");
+        toast.error(NOTIFICATION_MESSAGES.SCHEDULE.SLOT_REQUIRED);
         return;
       }
 
@@ -73,7 +74,7 @@ const ScheduleModal = ({ visible, onCancel, onSuccess, userId }) => {
           item.startTime.isAfter(item.endTime) ||
           item.startTime.isSame(item.endTime)
         ) {
-          toast.error("Giờ bắt đầu phải nhỏ hơn giờ kết thúc!");
+        toast.error(NOTIFICATION_MESSAGES.SCHEDULE.INVALID_TIME_RANGE);
           return;
         }
       }
@@ -103,9 +104,9 @@ const ScheduleModal = ({ visible, onCancel, onSuccess, userId }) => {
         );
 
         const scheduleCount = schedules?.length || validItems.length;
-        toast.success(`Đăng ký ${scheduleCount} ca làm việc thành công!`);
+      toast.success(NOTIFICATION_MESSAGES.SCHEDULE.REGISTERED(scheduleCount));
       } else {
-        toast.success("Đăng ký lịch làm việc thành công!");
+      toast.success(NOTIFICATION_MESSAGES.SCHEDULE.REGISTERED_SINGLE);
       }
 
       // Reset form and close modal

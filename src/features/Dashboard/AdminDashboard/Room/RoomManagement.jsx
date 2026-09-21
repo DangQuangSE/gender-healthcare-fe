@@ -15,10 +15,16 @@ import {
   DeleteOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { fetchRooms, addRoom, updateRoom, deleteRoom } from "./roomAPI";
+import {
+  fetchRooms,
+  addRoom,
+  updateRoom,
+  deleteRoom,
+} from "../../../catalog/api/roomApi";
 import RoomModal from "./RoomModal";
 import ConsultantRoomModal from "./ConsultantRoomModal";
 import dayjs from "dayjs";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const RoomManagement = () => {
   // States
@@ -44,7 +50,7 @@ const RoomManagement = () => {
       setRooms(data);
     } catch (error) {
       console.error("Error loading rooms:", error);
-      message.error("Không thể tải danh sách phòng!");
+      message.error(NOTIFICATION_MESSAGES.ROOM.LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -76,11 +82,11 @@ const RoomManagement = () => {
   const handleDeleteRoom = async (id) => {
     try {
       await deleteRoom(id);
-      message.success("Xóa phòng thành công!");
+      message.success(NOTIFICATION_MESSAGES.ROOM.DELETE_SUCCESS);
       await loadRooms();
     } catch (error) {
       console.error("Error deleting room:", error);
-      message.error("Có lỗi xảy ra khi xóa phòng!");
+      message.error(NOTIFICATION_MESSAGES.ROOM.DELETE_FAILED);
     }
   };
 
@@ -90,11 +96,11 @@ const RoomManagement = () => {
       if (editingRoom) {
         // Update existing room
         await updateRoom(editingRoom.id, roomData);
-        message.success("Cập nhật phòng thành công!");
+        message.success(NOTIFICATION_MESSAGES.ROOM.UPDATE_SUCCESS);
       } else {
         // Add new room
         await addRoom(roomData);
-        message.success("Thêm phòng thành công!");
+        message.success(NOTIFICATION_MESSAGES.ROOM.CREATE_SUCCESS);
       }
 
       // Close modal and reset form
@@ -106,7 +112,7 @@ const RoomManagement = () => {
       await loadRooms();
     } catch (error) {
       console.error("Error saving room:", error);
-      message.error("Có lỗi xảy ra khi lưu phòng!");
+      message.error(NOTIFICATION_MESSAGES.ROOM.SAVE_FAILED);
     }
   };
 

@@ -1,0 +1,6 @@
+import CONTENT_MESSAGES from "../../../shared/constants/contentMessages";
+
+export const COMMENT_ERROR_MESSAGES_BY_STATUS = Object.freeze({
+  404: CONTENT_MESSAGES.BLOG_SUMMARY_NOT_FOUND,
+  500: CONTENT_MESSAGES.BLOG_SUMMARY_SERVER_ERROR,
+});

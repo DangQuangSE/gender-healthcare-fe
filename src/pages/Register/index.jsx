@@ -1,5 +1,5 @@
 import React from "react";
-import AuthenTemplate from "../../components/authen-template";
+import AuthenTemplate from "../../features/auth/authen-template";
 
 function RegisterPage() {
   return <AuthenTemplate isLogin={false}></AuthenTemplate>;

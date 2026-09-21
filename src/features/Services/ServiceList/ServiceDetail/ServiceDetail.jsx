@@ -4,7 +4,10 @@ import BookingForm from "../../Booking/BookingForm";
 import { Tabs, Card, Avatar, Modal, Button } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import "./ServiceDetail.css";
-import api from "../../../../configs/api.js";
+import { getConsultants, getServiceById } from "../../../catalog/catalogApi";
+import { getServiceFeedback } from "../../../feedback/feedbackApi";
+import bookingStorage from "../../../../shared/storage/bookingStorage";
+import { STORAGE_KEYS } from "../../../../shared/constants/storageKeys";
 const ServiceDetail = () => {
   const { id } = useParams();
   const [service, setService] = useState(null);
@@ -30,13 +33,13 @@ const ServiceDetail = () => {
 
   const handleSelectConsultant = (consultant) => {
     // Lưu thông tin bác sĩ đã chọn vào localStorage
-    localStorage.setItem("selectedConsultantId", consultant.id);
-    localStorage.setItem(
-      "selectedConsultantName",
+    bookingStorage.set(STORAGE_KEYS.SELECTED_CONSULTANT_ID, consultant.id);
+    bookingStorage.set(
+      STORAGE_KEYS.SELECTED_CONSULTANT_NAME,
       consultant.fullname || "Chưa có tên"
     );
-    localStorage.setItem(
-      "selectedConsultantSpecialization",
+    bookingStorage.set(
+      STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION,
       consultant.specializationNames?.[0] || "Chưa có chuyên khoa"
     );
 
@@ -62,39 +65,18 @@ const ServiceDetail = () => {
   useEffect(() => {
     if (!id) return;
 
-    api
-      .get(`/services/${id}`)
-      .then((res) => {
-        setService(res.data);
-        setLoading(false);
+    Promise.all([getServiceById(id), getServiceFeedback(id), getConsultants(id)])
+      .then(([serviceResponse, feedbackResponse, consultantResponse]) => {
+        setService(serviceResponse.data);
+        setFeedbacks(feedbackResponse.data || []);
+        setConsultants(consultantResponse.data || []);
       })
-      .catch((err) => {
-        console.error("Lỗi khi lấy chi tiết dịch vụ:", err);
-        setLoading(false);
-      });
-
-    // Thêm phần lấy đánh giá
-    api
-      .get(`/feedback/service/${id}`)
-      .then((res) => {
-        console.log("Danh sách đánh giá:", res.data);
-        setFeedbacks(res.data);
-      })
-      .catch((err) => {
-        console.error("Lỗi khi lấy danh sách đánh giá:", err);
-      });
-
-    // Thêm phần lấy danh sách bác sĩ từ API /consultants
-    api
-      .get("/consultants")
-      .then((res) => {
-        console.log("Danh sách bác sĩ từ /consultants:", res.data);
-        setConsultants(res.data || []);
-      })
-      .catch((err) => {
-        console.error("Lỗi khi lấy danh sách bác sĩ:", err);
+      .catch(() => {
+        setService(null);
+        setFeedbacks([]);
         setConsultants([]);
-      });
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return <div className="loading">Đang tải dữ liệu...</div>;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import chatWebSocketService from './websocketService';
-import chatAPIService from './chatAPI';
+import chatAPIService from '../../../Chat/chatApi';
 
 /**
  * Custom Hook for Chat Dashboard
@@ -19,6 +19,12 @@ const useChatDashboard = (staffName) => {
 
   // Refs
   const subscriptionsRef = useRef(new Set());
+  const connectWebSocketRef = useRef(null);
+  const disconnectWebSocketRef = useRef(null);
+  const loadSessionsRef = useRef(null);
+  const loadStatsRef = useRef(null);
+  const handleNewMessageRef = useRef(null);
+  const handleNewSessionRef = useRef(null);
 
   /**
    * Initialize WebSocket connection
@@ -36,13 +42,13 @@ const useChatDashboard = (staffName) => {
       // Subscribe to staff messages
       const staffSubscription = chatWebSocketService.subscribeToStaffMessages((message) => {
         console.log('Staff message received:', message);
-        handleNewMessage(message);
+        handleNewMessageRef.current?.(message);
       });
 
       // Subscribe to new session notifications
       const newSessionSubscription = chatWebSocketService.subscribeToNewSessions((notification) => {
         console.log('New session notification:', notification);
-        handleNewSession(notification);
+        handleNewSessionRef.current?.(notification);
       });
 
       if (staffSubscription) subscriptionsRef.current.add('staff-messages');
@@ -55,6 +61,7 @@ const useChatDashboard = (staffName) => {
       setConnecting(false);
     }
   }, [connected, connecting]);
+  connectWebSocketRef.current = connectWebSocket;
 
   /**
    * Disconnect WebSocket
@@ -64,6 +71,7 @@ const useChatDashboard = (staffName) => {
     setConnected(false);
     subscriptionsRef.current.clear();
   }, []);
+  disconnectWebSocketRef.current = disconnectWebSocket;
 
   /**
    * Load chat sessions
@@ -80,6 +88,7 @@ const useChatDashboard = (staffName) => {
       setLoading(false);
     }
   }, []);
+  loadSessionsRef.current = loadSessions;
 
   /**
    * Join a chat session
@@ -214,14 +223,16 @@ const useChatDashboard = (staffName) => {
       setMessages(prev => [...prev, message]);
     }
   }, [activeSession]);
+  handleNewMessageRef.current = handleNewMessage;
 
   /**
    * Handle new session notification
    */
-  const handleNewSession = useCallback((notification) => {
+  const handleNewSession = useCallback(() => {
     // Reload sessions to include new session
     loadSessions();
   }, [loadSessions]);
+  handleNewSessionRef.current = handleNewSession;
 
   /**
    * Load chat statistics
@@ -234,6 +245,7 @@ const useChatDashboard = (staffName) => {
       console.error('Error loading stats:', error);
     }
   }, []);
+  loadStatsRef.current = loadStats;
 
   /**
    * Clear error
@@ -244,12 +256,12 @@ const useChatDashboard = (staffName) => {
 
   // Initialize on mount
   useEffect(() => {
-    connectWebSocket();
-    loadSessions();
-    loadStats();
+    connectWebSocketRef.current?.();
+    loadSessionsRef.current?.();
+    loadStatsRef.current?.();
 
     return () => {
-      disconnectWebSocket();
+      disconnectWebSocketRef.current?.();
     };
   }, []);
 
@@ -257,12 +269,12 @@ const useChatDashboard = (staffName) => {
   useEffect(() => {
     if (!connected && !connecting) {
       const timer = setTimeout(() => {
-        connectWebSocket();
+        connectWebSocketRef.current?.();
       }, 5000);
 
       return () => clearTimeout(timer);
     }
-  }, [connected, connecting, connectWebSocket]);
+  }, [connected, connecting]);
 
   return {
     // Connection state
