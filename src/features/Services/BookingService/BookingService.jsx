@@ -4,7 +4,7 @@ import BookingForm from "../Booking/BookingForm";
 import { Link } from "react-router-dom";
 import ServiceList from "../ServiceList/ServicesCart/ServiceList";
 import DoctorList from "../DoctorList/DoctorList";
-import FeedbackList from "../FeedBack/FeedbackList";
+import FeedbackList from "../Feedback/FeedbackList";
 const AppointmentForm = () => {
   const [activeTab, setActiveTab] = useState("intro");
   const [expandedFaq, setExpandedFaq] = useState(null);
