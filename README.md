@@ -33,12 +33,11 @@ Copy-Item .env.example .env
 npm run dev
 ```
 
-Configure `.env` for another backend or OAuth client:
+Configure `.env` for another backend:
 
 ```text
 VITE_API_BASE_URL=http://localhost:8085/api
 VITE_WEBSOCKET_URL=http://localhost:8085/ws/chat
-VITE_GOOGLE_CLIENT_ID=
 ```
 
 Only `VITE_*` values are available to browser code. Never put private provider credentials in this file.

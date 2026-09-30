@@ -3,9 +3,6 @@ import apiClient from "../../../shared/api/client";
 export const login = (credentials) =>
   apiClient.post("/v1/auth/login", credentials);
 
-export const loginWithGoogle = (accessToken) =>
-  apiClient.post("/v1/auth/oauth/google", { accessToken });
-
 export const requestRegistrationOtp = (email) =>
   apiClient.post("/v1/auth/registration/otp", { email });
 

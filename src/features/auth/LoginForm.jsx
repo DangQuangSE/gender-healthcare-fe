@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Form, Input } from "antd";
 import GradientButton from "../../components/common/GradientButton";
-import LoginGoogle from "./GoogleLogin";
-import { login as loginRequest, loginWithGoogle } from "./api/authApi";
+import { login as loginRequest } from "./api/authApi";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { login } from "../../redux/reduxStore/userSlice";
@@ -67,30 +66,6 @@ const LoginForm = ({ onClose }) => {
     }
   };
 
-  // Xử lý đăng nhập Google thành công
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      setLoading(true);
-      const { credential } = credentialResponse;
-
-      const res = await loginWithGoogle(credential);
-      const session = getLoginSession(res.data);
-      if (session.token && session.user) {
-        saveLoginSession(res.data);
-        dispatch(login(session));
-        toast.success(AUTH_MESSAGES.GOOGLE_LOGIN_SUCCESS);
-        if (onClose) onClose();
-        navigate(ROUTES.HOME);
-      } else {
-        toast.error(AUTH_MESSAGES.GOOGLE_LOGIN_FAILED);
-      }
-    } catch (error) {
-      toast.error(error.message || AUTH_MESSAGES.GOOGLE_AUTH_FAILED);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="login-form-wrapper">
       <Form form={form} layout="vertical" onFinish={handleLogin}>
@@ -126,15 +101,9 @@ const LoginForm = ({ onClose }) => {
         </Form.Item>
       </Form>
 
-      <div className="login-divider">
-        <div className="login-divider-text">Hoặc tiếp tục bằng</div>
-        <div className="login-socials">
-          <LoginGoogle onSuccess={handleGoogleSuccess} />
-        </div>
-        <div className="login-policy">
-          Bằng cách đăng ký, bạn đồng ý với <a href="#">Chính sách bảo mật</a>{" "}
-          và <a href="#">Điều khoản sử dụng</a>.
-        </div>
+      <div className="login-policy">
+        Bằng cách đăng ký, bạn đồng ý với <a href="#">Chính sách bảo mật</a>{" "}
+        và <a href="#">Điều khoản sử dụng</a>.
       </div>
     </div>
   );
