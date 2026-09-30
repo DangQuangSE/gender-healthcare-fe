@@ -4,14 +4,11 @@ import GradientButton from "../../components/common/GradientButton";
 import {
   configurePassword,
   login as loginRequest,
-  loginWithGoogle,
   requestRegistrationOtp,
   verifyRegistrationOtp,
 } from "./api/authApi";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/reduxStore/userSlice";
-import { toast } from "react-toastify";
-import LoginGoogle from "./GoogleLogin";
 import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
 import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
 import { ROUTES } from "../../shared/constants/routes";
@@ -161,31 +158,6 @@ const RegisterForm = () => {
     }
   };
 
-  // Xử lý đăng nhập Google thành công
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      setLoading(true);
-      const { credential } = credentialResponse;
-      // Gửi idToken lên backend để xác thực hoặc lấy thông tin user
-      const res = await loginWithGoogle(credential);
-      const session = getLoginSession(res.data);
-      if (session.token && session.user) {
-        saveLoginSession(res.data);
-        dispatch(login(session));
-        window.location.href = "/";
-
-        toast.success(AUTH_MESSAGES.GOOGLE_LOGIN_SUCCESS);
-        // TODO: Đóng modal hoặc redirect, ví dụ:
-      } else {
-        toast.error(AUTH_MESSAGES.GOOGLE_LOGIN_FAILED);
-      }
-    } catch (error) {
-      toast.error(error.message || AUTH_MESSAGES.GOOGLE_AUTH_FAILED);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="login-box">
       {/* Step 1: Nhập email */}
@@ -216,16 +188,6 @@ const RegisterForm = () => {
               </GradientButton>
             </Form.Item>
             <div style={{ margin: "32px 0 0" }}>
-              <div
-                style={{ textAlign: "center", color: "#bbb", marginBottom: 16 }}
-              >
-                Hoặc tiếp tục bằng
-              </div>
-              <div
-                style={{ display: "flex", gap: 12, justifyContent: "center" }}
-              >
-                <LoginGoogle onSuccess={handleGoogleSuccess} />
-              </div>
               <div style={{ fontSize: 12, color: "#888", marginTop: 20 }}>
                 Bằng cách đăng ký, bạn đồng ý với{" "}
                 <a href="#" style={{ color: "#3870ff" }}>
