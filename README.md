@@ -25,22 +25,14 @@ Feature API modules own endpoint paths and request mapping. Screens do not creat
 
 ## Local setup
 
-Requirements: Node.js 18+ and the backend running on port `8085` by default.
+Requirements: Node.js 18+ and the backend available through the local runtime configuration.
 
 ```powershell
 npm install
-Copy-Item .env.example .env
 npm run dev
 ```
 
-Configure `.env` for another backend:
-
-```text
-VITE_API_BASE_URL=http://localhost:8085/api
-VITE_WEBSOCKET_URL=http://localhost:8085/ws/chat
-```
-
-Only `VITE_*` values are available to browser code. Never put private provider credentials in this file.
+Provide browser-safe runtime configuration through your local development tooling before starting the application.
 
 ## Verification
 
@@ -50,16 +42,14 @@ npm run lint
 npm run build
 ```
 
-Use the shared manual flow checklist in [`plans/gender-healthcare-full-refactor/runbook.md`](../plans/gender-healthcare-full-refactor/runbook.md) for public pages, authentication, booking, medical results, blog, chat, payment and role dashboards.
+Use the shared manual flow checklist in [`plans/gender-healthcare-refactor/docs/verification/smoke-checklist.md`](../plans/gender-healthcare-refactor/docs/verification/smoke-checklist.md) for public pages, authentication, booking, medical results, blog, chat, payment and role dashboards.
 
 ## Deployment
 
-The static build is served by Nginx. Prepare the server with the repository deployment script, then deploy with:
+The production frontend is deployed by Vercel from the `main` branch. The
+repository workflow [`.github/workflows/build.yml`](.github/workflows/build.yml)
+builds the Vite bundle and verifies `dist/index.html`; Vercel performs the
+production deployment after the branch is updated.
 
-```bash
-export DEPLOY_HOST=your-server.example
-export DEPLOY_USER=deploy
-./deploy/frontend-deploy.sh
-```
-
-The script creates a timestamped release, updates the `current` symlink, validates Nginx, reloads it, checks the served HTML and rolls back on failure. See [`plans/gender-healthcare-full-refactor/runbook.md`](../plans/gender-healthcare-full-refactor/runbook.md).
+The project's required frontend settings must be available to Vercel and the
+build workflow through their respective project configurations.

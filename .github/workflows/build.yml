@@ -1,0 +1,91 @@
+name: Build frontend
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: s-health-frontend-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-config:
+    name: Validate frontend variables
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check required variables
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_WEBSOCKET_URL: ${{ vars.VITE_WEBSOCKET_URL }}
+          VITE_CLOUDINARY_UPLOAD_URL: ${{ vars.VITE_CLOUDINARY_UPLOAD_URL }}
+          VITE_CLOUDINARY_UPLOAD_PRESET: ${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
+        run: |
+          set -euo pipefail
+          for key in VITE_API_BASE_URL VITE_WEBSOCKET_URL VITE_CLOUDINARY_UPLOAD_URL VITE_CLOUDINARY_UPLOAD_PRESET; do
+            if [ -z "${!key}" ]; then
+              echo "::error::GitHub Actions variable $key is required."
+              exit 1
+            fi
+          done
+
+  build:
+    name: Build Vite application
+    needs: validate-config
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+      VITE_WEBSOCKET_URL: ${{ vars.VITE_WEBSOCKET_URL }}
+      VITE_CLOUDINARY_UPLOAD_URL: ${{ vars.VITE_CLOUDINARY_UPLOAD_URL }}
+      VITE_CLOUDINARY_UPLOAD_PRESET: ${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Store build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: s-health-frontend-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
+
+  verify-artifact:
+    name: Verify frontend artifact
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: s-health-frontend-dist
+          path: dist
+
+      - name: Check production entrypoint
+        run: test -s dist/index.html
