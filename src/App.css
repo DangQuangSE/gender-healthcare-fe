@@ -132,6 +132,8 @@ body {
 }
 
 .main-content-app {
+  flex: 1 0 auto;
+  min-width: 0;
   padding-top: 80px;
 }
 .btn-secondary {
