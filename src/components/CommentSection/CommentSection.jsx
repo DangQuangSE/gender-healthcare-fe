@@ -40,7 +40,8 @@ const CommentSection = ({
             userId: comment.commenterId, // Sửa lại lấy từ commenterId
             createdAt: comment.createAt,
             blogId: blogId,
-            userAvatar: "/placeholder-user.jpg",
+            userAvatar:
+              comment.commenterImageUrl || "/placeholder-user.jpg",
           }))
         : [];
 

@@ -13,7 +13,7 @@ const Logo = () => {
     <div className="logo">
       <Link to="/" className="logo-link" onClick={handleScrollToTop}>
         <img
-          src="logostc.png"
+          src="/logostc.png"
           alt="Gender Healthcare Logo"
           className="logo-img"
           style={{ height: 60 }}

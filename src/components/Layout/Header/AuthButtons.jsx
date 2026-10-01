@@ -136,8 +136,8 @@ const AuthButtons = () => {
   return (
     <div className="header-buttons">
       {!isLoggedIn ? (
-        <GradientButton onClick={onLoginClick}>
-          <span className="login-btn">Đăng nhập</span>
+        <GradientButton className="header-login-button" onClick={onLoginClick}>
+          <span className="header-login-label">Đăng nhập</span>
         </GradientButton>
       ) : (
         <div className="auth-buttons">

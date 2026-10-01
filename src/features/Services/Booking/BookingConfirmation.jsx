@@ -11,6 +11,7 @@ import storage from "../../../shared/storage/storage";
 import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
 import { getApiErrorMessage } from "../../../shared/api/errors";
 import { BOOKING_MESSAGES } from "../../../shared/constants/bookingMessages";
+import { resolveConsultantSnapshot } from "./bookingPreview";
 import {
   BOOKING_DEPOSIT_RATE,
   BOOKING_PAYMENT_COPY,
@@ -20,16 +21,20 @@ import {
 
 const BookingConfirmation = () => {
   const navigate = useNavigate();
-  const { state: booking } = useLocation();
+  const { state: routeBooking } = useLocation();
+  const booking = routeBooking || bookingStorage.getPendingPreview();
   const token = authStorage.getToken();
-  const selectedConsultantId =
-    booking?.consultantId || bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_ID);
-  const selectedConsultantName = bookingStorage.get(
-    STORAGE_KEYS.SELECTED_CONSULTANT_NAME
+  const selectedConsultant = resolveConsultantSnapshot(
+    booking?.consultant,
+    {
+      id: booking?.consultantId || bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_ID),
+      name: bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME),
+      specialization: bookingStorage.get(
+        STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION
+      ),
+    },
   );
-  const selectedConsultantSpecialization = bookingStorage.get(
-    STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION
-  );
+  const selectedConsultantId = selectedConsultant?.id || null;
   const [paymentIntent, setPaymentIntent] = useState(BOOKING_PAYMENT_INTENTS.FULL);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -152,6 +157,8 @@ const BookingConfirmation = () => {
             serviceName: fullBooking.serviceName,
             serviceType: booking.serviceType, // Thêm service type vào pendingBooking
         });
+        bookingStorage.removePendingPreview();
+        bookingStorage.clearSelectedConsultant();
 
         // Continue the PayOS flow on the payment page.
         navigate("/payment");
@@ -218,6 +225,8 @@ const BookingConfirmation = () => {
       };
 
       bookingStorage.setPendingBooking(pendingBookingData);
+      bookingStorage.removePendingPreview();
+      bookingStorage.clearSelectedConsultant();
 
       // Chuyển đến trang Payment để xử lý create-off
       navigate("/payment");
@@ -288,19 +297,19 @@ const BookingConfirmation = () => {
           </div>
         </div>
 
-        {booking.consultantId && selectedConsultantName && (
+        {selectedConsultant && (
             <div className="booking-card">
               <h2 className="booking-card-title">Bác sĩ đã chọn</h2>
               <div className="booking-consultant-profile">
                 <Avatar size={48} className="booking-consultant-avatar">
-                  {selectedConsultantName?.charAt(0) || "BS"}
+                  {selectedConsultant.name?.charAt(0) || "BS"}
                 </Avatar>
                 <div className="booking-consultant-info">
                   <h3 className="booking-consultant-name">
-                    {selectedConsultantName}
+                    {selectedConsultant.name || "Chưa có tên"}
                   </h3>
                   <p className="booking-consultant-specialization">
-                    {selectedConsultantSpecialization}
+                    {selectedConsultant.specialization || "Chưa có chuyên khoa"}
                   </p>
                 </div>
               </div>
@@ -331,9 +340,9 @@ const BookingConfirmation = () => {
           <div className="booking-info-item">
             <span className="booking-info-label">Bác sĩ:</span>
             <span className="booking-info-value booking-consultant-name">
-              {selectedConsultantId && selectedConsultantName
-                ? `${selectedConsultantName} - ${selectedConsultantSpecialization}`
-                : BOOKING_MESSAGES.CONSULTANT_NOT_SELECTED}
+                  {selectedConsultant
+                    ? `${selectedConsultant.name || "Chưa có tên"} - ${selectedConsultant.specialization || "Chưa có chuyên khoa"}`
+                    : BOOKING_MESSAGES.CONSULTANT_NOT_SELECTED}
             </span>
           </div>
           <div className="booking-info-item">

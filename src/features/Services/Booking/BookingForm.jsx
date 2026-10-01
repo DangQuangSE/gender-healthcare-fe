@@ -32,6 +32,7 @@ import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
 import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
 import { BOOKING_FORM_TAB_LABELS } from "./BookingForm.constants";
 import { getApiErrorMessage } from "../../../shared/api/errors";
+import { buildBookingPreview, resolveConsultantSnapshot } from "./bookingPreview";
 dayjs.extend(isSameOrBefore);
 
 const { Title, Text } = Typography;
@@ -54,6 +55,17 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
   const [selectedConsultantId, setSelectedConsultantId] = useState(null);
   const [consultants, setConsultants] = useState([]);
   const [consultantUpdateTrigger, setConsultantUpdateTrigger] = useState(0);
+
+  const selectedConsultant = resolveConsultantSnapshot(
+    consultants.find((consultant) => consultant.id === selectedConsultantId),
+    {
+      id: selectedConsultantId,
+      name: bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME),
+      specialization: bookingStorage.get(
+        STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION
+      ),
+    },
+  );
 
   // Function to fetch schedule data
   const fetchScheduleData = useCallback(() => {
@@ -163,15 +175,6 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
     };
   }, []);
 
-  // Clear selected consultant when component unmounts
-  useEffect(() => {
-    return () => {
-      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_ID);
-      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_NAME);
-      bookingStorage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION);
-    };
-  }, []);
-
   const displayDays = useMemo(() => {
     if (!Array.isArray(scheduleData)) return [];
     return scheduleData.map((s) => {
@@ -214,7 +217,7 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
       return;
     }
 
-    const bookingPreviewData = {
+    const bookingPreviewData = buildBookingPreview({
       serviceId: defaultServiceId,
       serviceName: serviceDetail.name,
       serviceType: serviceDetail.type, // Thêm type của service
@@ -225,9 +228,10 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
       slot: selectedTime.split(" - ")[0],
       slotId: selectedSlotId,
       note,
-      consultantId: selectedConsultantId, // Thêm consultantId
-    };
+      consultant: selectedConsultant,
+    });
 
+    bookingStorage.setPendingPreview(bookingPreviewData);
     navigate("/booking-confirmation", { state: bookingPreviewData });
   };
 
@@ -259,20 +263,24 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
         <Text strong className="form-label">
           Chọn bác sĩ (tùy chọn)
         </Text>
-        {selectedConsultantId &&
-          bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME) && (
+        {selectedConsultant && (
             <div
               key={consultantUpdateTrigger} // Force re-render when consultant changes
               className="consultant-selected-notification"
             >
-              ✓ Đã chọn: {bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_NAME)} -{" "}
-              {bookingStorage.get(STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION)}
+              ✓ Đã chọn: {selectedConsultant.name || "Chưa có tên"} -{" "}
+              {selectedConsultant.specialization || "Chưa có chuyên khoa"}
             </div>
           )}
         <Select
           placeholder="Chọn bác sĩ mong muốn"
           value={selectedConsultantId}
-          onChange={setSelectedConsultantId}
+          onChange={(value) => {
+            setSelectedConsultantId(value ?? null);
+            if (value === undefined || value === null) {
+              bookingStorage.clearSelectedConsultant();
+            }
+          }}
           allowClear
           className="consultant-select"
         >
