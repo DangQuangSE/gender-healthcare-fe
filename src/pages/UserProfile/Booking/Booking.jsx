@@ -25,6 +25,7 @@ import BookingAppointmentCard from "./BookingAppointmentCard";
 import BookingDetailModal from "./BookingDetailModal";
 import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
 import { PAYMENT_MESSAGES } from "../../../shared/constants/paymentMessages";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 import {
   APPOINTMENT_STATUS_BY_TAB,
   BOOKING_TABS,
@@ -75,8 +76,9 @@ const Booking = () => {
       const data = responses.flatMap((response) => response.data || []);
       data.sort((first, second) => new Date(second.created_at) - new Date(first.created_at));
       setAppointments(data);
-    } catch {
+    } catch (error) {
       setAppointments([]);
+      message.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -120,8 +122,9 @@ const Booking = () => {
         await createOnlineMeeting(appointmentId);
         message.success(NOTIFICATION_MESSAGES.BOOKING.ONLINE_ROOM_CREATED);
         setTimeout(fetchAppointments, 1000);
-      } catch {
+      } catch (error) {
         // Meeting creation can be retried from the appointment detail flow.
+        message.error(getApiErrorMessage(error));
       }
     },
     [fetchAppointments]
@@ -135,15 +138,17 @@ const Booking = () => {
       setAppointments((previous) => previous.filter(({ id }) => id !== appointmentId));
     } catch (error) {
       const status = error.response?.status;
-      if (status === 500) {
-        message.error(NOTIFICATION_MESSAGES.BOOKING.CANCEL_SERVER_ERROR);
-      } else if (status === 404) {
-        message.error(NOTIFICATION_MESSAGES.BOOKING.CANCEL_NOT_FOUND);
+      const fallbackMessage =
+        status === 500
+          ? NOTIFICATION_MESSAGES.BOOKING.CANCEL_SERVER_ERROR
+          : status === 404
+            ? NOTIFICATION_MESSAGES.BOOKING.CANCEL_NOT_FOUND
+            : status === 400
+              ? NOTIFICATION_MESSAGES.BOOKING.CANCEL_INVALID_STATUS
+              : NOTIFICATION_MESSAGES.BOOKING.CANCEL_FAILED;
+      message.error(getApiErrorMessage(error, fallbackMessage));
+      if (status === 404) {
         setAppointments((previous) => previous.filter(({ id }) => id !== appointmentId));
-      } else if (status === 400) {
-        message.error(NOTIFICATION_MESSAGES.BOOKING.CANCEL_INVALID_STATUS);
-      } else {
-        message.error(NOTIFICATION_MESSAGES.BOOKING.CANCEL_FAILED);
       }
     }
   };
@@ -191,8 +196,8 @@ const Booking = () => {
       } else {
         message.info(PAYMENT_MESSAGES.PENDING);
       }
-    } catch {
-      message.error(PAYMENT_MESSAGES.STATUS_REFRESH_FAILED);
+    } catch (error) {
+      message.error(getApiErrorMessage(error, PAYMENT_MESSAGES.STATUS_REFRESH_FAILED));
     }
 
     window.history.replaceState({}, document.title, BOOKING_TEXT.ROUTE);

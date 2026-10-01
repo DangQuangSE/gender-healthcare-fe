@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "antd";
+import { Button, message } from "antd";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 import {
   getServices,
   getServiceAverageRating,
@@ -62,8 +63,9 @@ const ServiceList = () => {
       try {
         const response = await getServices();
         setServices(Array.isArray(response.data) ? response.data : []);
-      } catch {
+      } catch (error) {
         setServices([]);
+        message.error(getApiErrorMessage(error, SERVICE_MESSAGES.LOAD_FAILED));
       }
     };
 

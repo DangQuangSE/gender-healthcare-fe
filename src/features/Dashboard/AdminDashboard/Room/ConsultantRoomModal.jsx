@@ -21,6 +21,7 @@ import {
 } from "../../../catalog/api/roomApi";
 import { fetchUsersByRole } from "../../../admin/api/userApi";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const ConsultantRoomModal = ({ visible, onCancel, room }) => {
   const [consultants, setConsultants] = useState([]); // Danh sách tất cả consultant
@@ -57,7 +58,9 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
       setConsultants(consultants);
     } catch (error) {
       console.error(" Error loading consultants:", error);
-      message.error(NOTIFICATION_MESSAGES.ROOM.CONSULTANTS_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.ROOM.CONSULTANTS_LOAD_FAILED)
+      );
     } finally {
       setLoadingConsultants(false);
     }
@@ -80,7 +83,12 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
     } catch (error) {
       console.error(" Error loading room consultants:", error);
       // fetchRoomConsultants đã xử lý 404, nên chỉ hiển thị error cho các lỗi khác
-      message.error(NOTIFICATION_MESSAGES.ROOM.ROOM_CONSULTANTS_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.ROOM.ROOM_CONSULTANTS_LOAD_FAILED
+        )
+      );
       setRoomConsultants([]);
     } finally {
       setLoading(false);
@@ -133,11 +141,9 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
       }
 
       console.error(" Error adding consultant to room:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        NOTIFICATION_MESSAGES.ROOM.ADD_FAILED;
-      message.error(errorMessage);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.ROOM.ADD_FAILED)
+      );
     } finally {
       setLoading(false);
     }
@@ -158,11 +164,9 @@ const ConsultantRoomModal = ({ visible, onCancel, room }) => {
       await loadRoomConsultants();
     } catch (error) {
       console.error(" Error removing consultant from room:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        NOTIFICATION_MESSAGES.ROOM.REMOVE_FAILED;
-      message.error(errorMessage);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.ROOM.REMOVE_FAILED)
+      );
     } finally {
       setLoading(false);
     }

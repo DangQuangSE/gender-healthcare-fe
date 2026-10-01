@@ -12,6 +12,7 @@ import {
 import { CalendarOutlined, ApiOutlined } from "@ant-design/icons";
 import { getMySchedule } from "../../../scheduling/scheduleApi";
 import dayjs from "dayjs";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -43,7 +44,7 @@ const TestMyScheduleAPI = () => {
       setResponse(result);
     } catch (err) {
       console.error(" API Error:", err);
-      setError(err.response?.data?.message || err.message || "Unknown error");
+      setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

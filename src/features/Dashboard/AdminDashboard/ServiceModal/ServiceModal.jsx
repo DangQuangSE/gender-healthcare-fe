@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Modal, Form, Input, Select } from "antd";
+import { Modal, Form, Input, Select, message } from "antd";
 import {
   fetchSpecializations as fetchSpecializationOptions,
 } from "../../../catalog/api/specializationApi";
@@ -8,6 +8,8 @@ import {
   SERVICE_TYPE_OPTIONS,
 } from "./serviceManagementMessages";
 import "./ServiceModal.css";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
+import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
 
 const { Option } = Select;
 
@@ -33,6 +35,12 @@ const ServiceModal = ({
     } catch (error) {
       console.error("Error fetching specializations:", error);
       setSpecializations([]);
+      message.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.ROOM.SPECIALIZATIONS_LOAD_FAILED
+        )
+      );
     } finally {
       setLoadingSpecializations(false);
     }

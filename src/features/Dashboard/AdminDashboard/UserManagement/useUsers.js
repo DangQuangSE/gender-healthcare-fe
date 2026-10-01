@@ -8,6 +8,7 @@ import {
 } from "../../../admin/api/userApi";
 import dayjs from "dayjs";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 /**
  * Custom hook for managing Users
@@ -32,7 +33,9 @@ export const useUsers = () => {
       setUsers(data);
     } catch (error) {
       console.error("Error loading users:", error);
-      message.error(NOTIFICATION_MESSAGES.USER_MANAGEMENT.LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.USER_MANAGEMENT.LOAD_FAILED)
+      );
     } finally {
       setLoading(false);
     }
@@ -84,7 +87,9 @@ export const useUsers = () => {
       await loadUsers();
     } catch (error) {
       console.error("Lỗi cập nhật người dùng:", error);
-      message.error(NOTIFICATION_MESSAGES.USER_MANAGEMENT.SAVE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.USER_MANAGEMENT.SAVE_FAILED)
+      );
     }
   };
 
@@ -96,7 +101,9 @@ export const useUsers = () => {
       await loadUsers();
     } catch (error) {
       console.error("Lỗi xóa người dùng:", error);
-      message.error(NOTIFICATION_MESSAGES.USER_MANAGEMENT.DELETE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.USER_MANAGEMENT.DELETE_FAILED)
+      );
     }
   };
 

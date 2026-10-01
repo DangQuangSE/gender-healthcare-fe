@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 import { createComment } from "../../features/blog/api/commentApi";
 const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
   const [content, setContent] = useState("");
@@ -45,18 +46,16 @@ const CommentForm = ({ blogId, user, onCommentAdded, onRefresh }) => {
       toast.success(CONTENT_MESSAGES.COMMENT_CREATE_SUCCESS);
     } catch (error) {
       const status = error.response?.status;
-      let errorMessage = CONTENT_MESSAGES.COMMENT_CREATE_FAILED;
+      let fallbackMessage = CONTENT_MESSAGES.COMMENT_CREATE_FAILED;
       if (status === 401) {
-        errorMessage = CONTENT_MESSAGES.SESSION_EXPIRED;
+        fallbackMessage = CONTENT_MESSAGES.SESSION_EXPIRED;
       } else if (status === 400) {
-        errorMessage = CONTENT_MESSAGES.INVALID_DATA;
+        fallbackMessage = CONTENT_MESSAGES.INVALID_DATA;
       } else if (status === 403) {
-        errorMessage = CONTENT_MESSAGES.FORBIDDEN;
-      } else if (error.message) {
-        errorMessage = error.message;
+        fallbackMessage = CONTENT_MESSAGES.FORBIDDEN;
       }
 
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, fallbackMessage));
     } finally {
       setSubmitting(false);
     }

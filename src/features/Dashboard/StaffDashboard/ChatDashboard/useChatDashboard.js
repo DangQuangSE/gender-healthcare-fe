@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import chatWebSocketService from './websocketService';
 import chatAPIService from '../../../Chat/chatApi';
+import { getApiErrorMessage } from '../../../../shared/api/errors';
+import CHAT_MESSAGES from './chatMessages';
 
 /**
  * Custom Hook for Chat Dashboard
@@ -56,7 +58,7 @@ const useChatDashboard = (staffName) => {
 
     } catch (error) {
       console.error('Failed to connect WebSocket:', error);
-      setError('Failed to connect to chat service');
+      setError(getApiErrorMessage(error, CHAT_MESSAGES.UNKNOWN_ERROR));
     } finally {
       setConnecting(false);
     }
@@ -83,7 +85,7 @@ const useChatDashboard = (staffName) => {
       setSessions(sessionsData);
     } catch (error) {
       console.error('Error loading sessions:', error);
-      setError('Failed to load chat sessions');
+      setError(getApiErrorMessage(error, CHAT_MESSAGES.SESSIONS_LOAD_FAILED));
     } finally {
       setLoading(false);
     }
@@ -122,7 +124,7 @@ const useChatDashboard = (staffName) => {
 
     } catch (error) {
       console.error('Error joining session:', error);
-      setError('Failed to join chat session');
+      setError(getApiErrorMessage(error, CHAT_MESSAGES.SESSION_JOIN_FAILED));
     } finally {
       setLoading(false);
     }
@@ -176,7 +178,7 @@ const useChatDashboard = (staffName) => {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      setError('Failed to send message');
+      setError(getApiErrorMessage(error, CHAT_MESSAGES.MESSAGE_SEND_FAILED));
     }
   }, [activeSession, staffName, connected]);
 

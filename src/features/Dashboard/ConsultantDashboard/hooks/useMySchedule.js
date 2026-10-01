@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { getMySchedule } from "../../../scheduling/scheduleApi";
 import dayjs from "dayjs";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 /**
  * Custom hook for managing my schedule appointments
@@ -27,10 +28,10 @@ export const useMySchedule = () => {
 
       return response.data;
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to fetch appointments";
+      const errorMessage = getApiErrorMessage(
+        err,
+        "Không thể tải lịch hẹn. Vui lòng thử lại."
+      );
       setError(errorMessage);
       toast.error(
         NOTIFICATION_MESSAGES.SCHEDULE.FETCH_APPOINTMENTS_FAILED(errorMessage)

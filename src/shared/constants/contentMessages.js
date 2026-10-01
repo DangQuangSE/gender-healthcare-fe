@@ -1,5 +1,5 @@
 export const CONTENT_MESSAGES = {
-  IMAGE_UPLOAD_NOT_CONFIGURED: "TÃ­nh nÄƒng táº£i áº£nh chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh.",
+  IMAGE_UPLOAD_NOT_CONFIGURED: "Tính năng tải ảnh chưa được cấu hình.",
   COMMENT_REQUIRED: "Vui lòng nhập nội dung bình luận!",
   COMMENT_TOO_LONG: "Bình luận không được vượt quá 1000 ký tự!",
   LOGIN_REQUIRED: "Vui lòng đăng nhập lại!",
@@ -16,7 +16,7 @@ export const CONTENT_MESSAGES = {
   FEEDBACK_LOADING: "Đang tải đánh giá...",
   FEEDBACK_EMPTY: "Chưa có đánh giá nào.",
   BLOG_SUMMARY_NOT_FOUND: "Không tìm thấy thống kê blog.",
-  BLOG_SUMMARY_SERVER_ERROR: "Lỗi server khi lấy thống kê blog.",
+  BLOG_SUMMARY_SERVER_ERROR: "Lỗi máy chủ khi lấy thống kê blog.",
   BLOG_SUMMARY_LOAD_FAILED: "Không thể lấy thống kê blog. Vui lòng thử lại sau.",
   BLOG_LOGIN_REQUIRED: "Bạn cần đăng nhập để thích bài viết",
   BLOG_SESSION_EXPIRED: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",

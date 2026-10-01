@@ -2,6 +2,7 @@ export const CYCLE_TRACKER_MESSAGES = {
   LOGIN_REQUIRED: "Bạn chưa đăng nhập hoặc thông tin đăng nhập chưa sẵn sàng!",
   LOG_SAVE_SUCCESS: "Lưu nhật ký thành công!",
   LOG_SAVE_FAILED: "Không thể lưu log. Vui lòng thử lại sau.",
+  LOG_LOAD_FAILED: "Không thể tải nhật ký. Vui lòng thử lại sau.",
   RECOMMENDATIONS: {
     NEXT_PERIOD_PREP: `🔁 Sắp đến kỳ kinh:
       1. Chuẩn bị sẵn các vật dụng vệ sinh cá nhân như băng vệ sinh, cốc nguyệt san, giấy vệ sinh sạch.
@@ -60,4 +61,3 @@ export const CYCLE_TRACKER_MESSAGES = {
 };
 
 export default CYCLE_TRACKER_MESSAGES;
-

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 import { deleteComment } from "../../features/blog/api/commentApi";
 const CommentItem = ({ comment, currentUser, onCommentDeleted }) => {
   const [deleting, setDeleting] = useState(false);
@@ -54,11 +55,9 @@ const CommentItem = ({ comment, currentUser, onCommentDeleted }) => {
         errorMessage = CONTENT_MESSAGES.FORBIDDEN;
       } else if (status === 404) {
         errorMessage = CONTENT_MESSAGES.COMMENT_NOT_FOUND;
-      } else if (error.message) {
-        errorMessage = error.message;
       }
 
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, errorMessage));
     } finally {
       setDeleting(false);
       setShowConfirm(false);

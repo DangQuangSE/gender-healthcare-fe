@@ -7,6 +7,7 @@ import {
   deleteSpecialization,
 } from "../../../catalog/api/specializationApi";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 /**
  * Custom hook for managing Specializations
@@ -32,7 +33,9 @@ export const useSpecializations = () => {
       setSpecializations(data);
     } catch (error) {
       console.error("Error loading specializations:", error);
-      message.error(NOTIFICATION_MESSAGES.SPECIALIZATION.LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SPECIALIZATION.LOAD_FAILED)
+      );
     } finally {
       setLoading(false);
     }
@@ -86,12 +89,9 @@ export const useSpecializations = () => {
       console.error("Error details:", error.response?.data);
 
       // Hiển thị lỗi chi tiết hơn
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        NOTIFICATION_MESSAGES.SPECIALIZATION.SAVE_FAILED;
-      message.error(errorMessage);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SPECIALIZATION.SAVE_FAILED)
+      );
     }
   };
 
@@ -104,7 +104,9 @@ export const useSpecializations = () => {
       await loadSpecializations();
     } catch (error) {
       console.error("Lỗi xóa specialization:", error);
-      message.error(NOTIFICATION_MESSAGES.SPECIALIZATION.DELETE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SPECIALIZATION.DELETE_FAILED)
+      );
     }
   };
 

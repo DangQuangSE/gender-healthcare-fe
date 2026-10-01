@@ -4,6 +4,7 @@ import "@splidejs/react-splide/css";
 import { AutoScroll } from "@splidejs/splide-extension-auto-scroll";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 import doctor1 from "../../../assets/images/doctor1.jpg";
 import TESTIMONIAL_MESSAGES from "./testimonialsMessages";
 import { getConsultants } from "../../../features/catalog/catalogApi";
@@ -22,8 +23,8 @@ const Testimonials = () => {
         setLoading(true);
         const response = await getConsultants();
         setConsultants(response.data || []);
-      } catch {
-        message.error(TESTIMONIAL_MESSAGES.LOAD_FAILED);
+      } catch (error) {
+        message.error(getApiErrorMessage(error, TESTIMONIAL_MESSAGES.LOAD_FAILED));
         setConsultants([]);
       } finally {
         setLoading(false);

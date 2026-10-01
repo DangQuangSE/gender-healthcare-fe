@@ -9,6 +9,7 @@ import {
   normalizeCycleLogs,
 } from "./cycleTrackerUtils";
 import { SYMPTOM_ENUM_MAP } from "./cycleTrackerConstants";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 
 export const useCycleTrackerData = (token) => {
   const [userData, setUserData] = useState(INITIAL_USER_DATA);
@@ -28,8 +29,13 @@ export const useCycleTrackerData = (token) => {
     let cancelled = false;
     setLoading(true);
     loadLogs()
-      .catch(() => {
-        if (!cancelled) setUserData(INITIAL_USER_DATA);
+      .catch((error) => {
+        if (!cancelled) {
+          setUserData(INITIAL_USER_DATA);
+          toast.error(
+            getApiErrorMessage(error, CYCLE_TRACKER_MESSAGES.LOG_LOAD_FAILED)
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -68,8 +74,8 @@ export const useCycleTrackerData = (token) => {
         });
         await loadLogs();
         toast.success(CYCLE_TRACKER_MESSAGES.LOG_SAVE_SUCCESS);
-      } catch {
-        toast.error(CYCLE_TRACKER_MESSAGES.LOG_SAVE_FAILED);
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, CYCLE_TRACKER_MESSAGES.LOG_SAVE_FAILED));
       } finally {
         setLoading(false);
       }

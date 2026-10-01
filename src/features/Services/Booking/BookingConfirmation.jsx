@@ -54,8 +54,10 @@ const BookingConfirmation = () => {
       try {
         const response = await getCurrentUser();
         setUser(response.data);
-      } catch {
-        message.error(BOOKING_MESSAGES.USER_LOAD_FAILED);
+      } catch (error) {
+        message.error(
+          getApiErrorMessage(error, BOOKING_MESSAGES.USER_LOAD_FAILED)
+        );
       } finally {
         setLoading(false);
       }

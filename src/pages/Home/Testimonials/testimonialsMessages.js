@@ -1,14 +1,14 @@
 export const TESTIMONIAL_MESSAGES = {
-  TITLE: "DOI NGU BAC SI",
-  DESCRIPTION: "Doi ngu bac si chuyen khoa cua chung toi luon san sang ho tro ban cham soc suc khoe.",
-  LOADING: "Dang tai danh sach bac si...",
-  LOAD_FAILED: "Khong the tai danh sach bac si.",
-  EMPTY: "Hien tai chua co bac si nao trong he thong.",
-  UNKNOWN_NAME: "Chua co ten",
-  UNKNOWN_SPECIALIZATION: "Chua co chuyen khoa",
-  HEALTHCARE_SPECIALTY: "Cham soc suc khoe gioi tinh",
-  VIEW_SERVICES: "Xem dich vu",
-  CAROUSEL_LABEL: "Danh sach bac si",
+  TITLE: "ĐỘI NGŨ BÁC SĨ",
+  DESCRIPTION: "Đội ngũ bác sĩ chuyên khoa của chúng tôi luôn sẵn sàng hỗ trợ bạn chăm sóc sức khỏe.",
+  LOADING: "Đang tải danh sách bác sĩ...",
+  LOAD_FAILED: "Không thể tải danh sách bác sĩ.",
+  EMPTY: "Hiện tại chưa có bác sĩ nào trong hệ thống.",
+  UNKNOWN_NAME: "Chưa có tên",
+  UNKNOWN_SPECIALIZATION: "Chưa có chuyên khoa",
+  HEALTHCARE_SPECIALTY: "Chăm sóc sức khỏe giới tính",
+  VIEW_SERVICES: "Xem dịch vụ",
+  CAROUSEL_LABEL: "Danh sách bác sĩ",
 };
 
 export default TESTIMONIAL_MESSAGES;

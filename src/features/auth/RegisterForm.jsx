@@ -12,6 +12,7 @@ import { login } from "../../redux/reduxStore/userSlice";
 import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
 import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
 import { ROUTES } from "../../shared/constants/routes";
+import { getApiErrorMessage } from "../../shared/api/errors";
 
 const RegisterForm = () => {
   const [step, setStep] = useState(1);
@@ -36,15 +37,12 @@ const RegisterForm = () => {
         setStep(2);
       }
     } catch (err) {
-      const errMsg =
-        err?.response?.data && typeof err.response.data === "string"
-          ? err.response.data
-          : "";
+      const errMsg = getApiErrorMessage(err, AUTH_MESSAGES.REGISTRATION_FAILED);
 
       if (errMsg.includes("Email đã tồn tại")) {
         message.info(AUTH_MESSAGES.EMAIL_EXISTS);
       } else {
-        message.error(errMsg || AUTH_MESSAGES.REGISTRATION_FAILED);
+        message.error(errMsg);
       }
     } finally {
       setLoading(false);
@@ -67,14 +65,11 @@ const RegisterForm = () => {
       }
     } catch (err) {
       // Nếu backend trả về chuỗi lỗi
-      const errMsg =
-        err?.response?.data && typeof err.response.data === "string"
-          ? err.response.data
-          : "";
+      const errMsg = getApiErrorMessage(err, AUTH_MESSAGES.OTP_INVALID);
       if (errMsg.includes("OTP không hợp lệ") || errMsg.includes("hết hạn")) {
         message.error(AUTH_MESSAGES.OTP_INVALID);
       } else {
-        message.error(AUTH_MESSAGES.REGISTRATION_FAILED);
+        message.error(errMsg);
       }
     } finally {
       setLoading(false);
@@ -115,20 +110,7 @@ const RegisterForm = () => {
         message.error(AUTH_MESSAGES.REGISTRATION_FAILED);
       }
     } catch (err) {
-      // Nếu chắc chắn chỉ lỗi mật khẩu không cần thông báo
-      if (
-        err?.response?.data &&
-        typeof err.response.data === "string" &&
-        err.response.data.includes("Mật khẩu")
-      ) {
-        message.error(err.response.data);
-      } else {
-        const errMsg =
-          err?.response?.data && typeof err.response.data === "string"
-            ? err.response.data
-            : AUTH_MESSAGES.REGISTRATION_FAILED;
-        message.error(errMsg);
-      }
+      message.error(getApiErrorMessage(err, AUTH_MESSAGES.REGISTRATION_FAILED));
     } finally {
       setLoading(false);
     }
@@ -152,7 +134,7 @@ const RegisterForm = () => {
         message.error(AUTH_MESSAGES.INVALID_CREDENTIALS);
       }
     } catch (err) {
-      message.error(err.message || AUTH_MESSAGES.LOGIN_FAILED);
+      message.error(getApiErrorMessage(err, AUTH_MESSAGES.LOGIN_FAILED));
     } finally {
       setLoading(false);
     }

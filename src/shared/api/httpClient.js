@@ -26,7 +26,13 @@ httpClient.interceptors.response.use(
     response.data = response.apiResponse.data;
     return response;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    if (error.response?.data) {
+      error.apiResponse = normalizeApiResponse(error.response.data);
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 export default httpClient;

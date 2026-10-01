@@ -20,6 +20,7 @@ import StaffMedicalInfoModal from "./StaffMedicalInfoModal";
 import STAFF_BOOKING_MESSAGES from "./staffBookingMessages";
 import { STAFF_APPOINTMENT_STATUS_KEYS } from "./StaffBookingDashboard.constants";
 import { showStaffAppointmentDetail } from "./StaffAppointmentDetailModal";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 import "../../AdminDashboard/BookingDashboard/BookingDashboard.css";
 
 const { Search } = Input;
@@ -73,7 +74,9 @@ const StaffBookingDashboard = () => {
       setAppointments(sortedData);
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      message.error(NOTIFICATION_MESSAGES.STAFF_BOOKING.LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.STAFF_BOOKING.LOAD_FAILED)
+      );
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -112,7 +115,12 @@ const StaffBookingDashboard = () => {
       fetchAppointments(activeTab);
     } catch (error) {
       console.error(" Error checking appointment:", error);
-      message.error(NOTIFICATION_MESSAGES.STAFF_BOOKING.CHECKED_FAILED);
+      message.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.STAFF_BOOKING.CHECKED_FAILED
+        )
+      );
     }
   };
 
@@ -132,7 +140,12 @@ const StaffBookingDashboard = () => {
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật thông tin y tế:", error);
-      toast.error(NOTIFICATION_MESSAGES.STAFF_BOOKING.MEDICAL_UPDATE_FAILED);
+      toast.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.STAFF_BOOKING.MEDICAL_UPDATE_FAILED
+        )
+      );
     }
   };
 
@@ -181,14 +194,12 @@ const StaffBookingDashboard = () => {
       await fetchAppointments(activeTab);
     } catch (error) {
       console.error(" Error canceling appointment:", error);
-      console.error("Error details:", error.response?.data);
-
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        NOTIFICATION_MESSAGES.STAFF_BOOKING.CANCEL_FAILED;
-      message.error(errorMessage);
+      message.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.STAFF_BOOKING.CANCEL_FAILED
+        )
+      );
     }
   };
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { message, Spin } from "antd";
 import "./FeedbackList.css";
 import CONTENT_MESSAGES from "../../../shared/constants/contentMessages";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 import { getAllServiceFeedback } from "../../feedback/feedbackApi";
 
 // Component nhỏ để hiển thị ngôi sao
@@ -44,7 +45,9 @@ const FeedbackList = () => {
         setFeedbacks(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("Error fetching feedbacks:", error);
-        message.error(CONTENT_MESSAGES.FEEDBACK_LOAD_FAILED);
+        message.error(
+          getApiErrorMessage(error, CONTENT_MESSAGES.FEEDBACK_LOAD_FAILED)
+        );
       } finally {
         setLoading(false);
       }

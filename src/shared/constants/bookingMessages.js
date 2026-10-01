@@ -4,7 +4,7 @@ export const BOOKING_MESSAGES = {
   USER_LOAD_FAILED: "Không thể lấy thông tin người dùng.",
   USER_LOADING: "Đang tải thông tin người dùng...",
   NO_BOOKING_DATA: "Không có thông tin đặt lịch!",
-  APPOINTMENT_ID_MISSING: "Không lấy được mã lịch hẹn từ phản hồi server.",
+  APPOINTMENT_ID_MISSING: "Không lấy được mã lịch hẹn từ phản hồi máy chủ.",
   SUCCESS: "Đặt lịch thành công!",
   FAILED: "Đặt lịch thất bại",
   SERVER_ERROR: "Lỗi không xác định từ máy chủ",

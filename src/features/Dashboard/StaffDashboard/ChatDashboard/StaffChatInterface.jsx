@@ -6,6 +6,7 @@ import unifiedChatAPI from "../../../Chat/unifiedChatAPI";
 import { useChatWebSocket } from "./useChatWebSocket";
 import { chatNotificationService } from "./chatNotificationService";
 import CHAT_MESSAGES from "./chatMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 import { useRealTimeMessages } from "../../../Chat/hooks/useRealTimeMessages";
 import StaffChatView from "./StaffChatView";
 import "./StaffChatInterface.css";
@@ -123,7 +124,7 @@ const StaffChatInterface = ({ defaultTab = "waiting", hideTabs = false }) => {
       }
     } catch (error) {
       console.error("Error loading all sessions:", error);
-      message.error(CHAT_MESSAGES.SESSIONS_LOAD_FAILED);
+      message.error(getApiErrorMessage(error, CHAT_MESSAGES.SESSIONS_LOAD_FAILED));
     } finally {
       setLoading(false);
     }
@@ -229,7 +230,7 @@ const StaffChatInterface = ({ defaultTab = "waiting", hideTabs = false }) => {
       }
     } catch (error) {
       console.error("Error loading sessions for tab:", error);
-      message.error(CHAT_MESSAGES.SESSIONS_LOAD_FAILED);
+      message.error(getApiErrorMessage(error, CHAT_MESSAGES.SESSIONS_LOAD_FAILED));
     } finally {
       setLoading(false);
     }
@@ -615,7 +616,7 @@ const StaffChatInterface = ({ defaultTab = "waiting", hideTabs = false }) => {
           }, 1000);
         } catch (error) {
           console.error("Failed to send greeting message:", error);
-          message.error(CHAT_MESSAGES.GREETING_FAILED);
+          message.error(getApiErrorMessage(error, CHAT_MESSAGES.GREETING_FAILED));
         }
 
         // Update selected session with joined session data
@@ -658,7 +659,7 @@ const StaffChatInterface = ({ defaultTab = "waiting", hideTabs = false }) => {
       }, 200);
     } catch (error) {
       console.error("Error handling session selection:", error);
-      message.error(CHAT_MESSAGES.SESSION_JOIN_FAILED);
+      message.error(getApiErrorMessage(error, CHAT_MESSAGES.SESSION_JOIN_FAILED));
     }
   };
 
@@ -713,7 +714,7 @@ const StaffChatInterface = ({ defaultTab = "waiting", hideTabs = false }) => {
       );
     } catch (error) {
       console.error("Error sending message:", error);
-      message.error(CHAT_MESSAGES.MESSAGE_SEND_FAILED);
+      message.error(getApiErrorMessage(error, CHAT_MESSAGES.MESSAGE_SEND_FAILED));
 
       // Restore input text on error
       setInputMessage(messageText);
@@ -764,13 +765,13 @@ const StaffChatInterface = ({ defaultTab = "waiting", hideTabs = false }) => {
             }, 500);
           } catch (error) {
             console.error(" [STAFF CHAT] Error ending session:", error);
-            message.error(CHAT_MESSAGES.END_SESSION_FAILED);
+            message.error(getApiErrorMessage(error, CHAT_MESSAGES.END_SESSION_FAILED));
           }
         },
       });
     } catch (error) {
       console.error(" [STAFF CHAT] Error in handleEndSession:", error);
-      message.error(CHAT_MESSAGES.UNKNOWN_ERROR);
+      message.error(getApiErrorMessage(error, CHAT_MESSAGES.UNKNOWN_ERROR));
     }
   };
 

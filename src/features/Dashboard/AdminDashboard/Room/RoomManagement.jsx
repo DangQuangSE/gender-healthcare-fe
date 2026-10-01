@@ -25,6 +25,7 @@ import RoomModal from "./RoomModal";
 import ConsultantRoomModal from "./ConsultantRoomModal";
 import dayjs from "dayjs";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const RoomManagement = () => {
   // States
@@ -50,7 +51,9 @@ const RoomManagement = () => {
       setRooms(data);
     } catch (error) {
       console.error("Error loading rooms:", error);
-      message.error(NOTIFICATION_MESSAGES.ROOM.LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.ROOM.LOAD_FAILED)
+      );
     } finally {
       setLoading(false);
     }
@@ -86,7 +89,9 @@ const RoomManagement = () => {
       await loadRooms();
     } catch (error) {
       console.error("Error deleting room:", error);
-      message.error(NOTIFICATION_MESSAGES.ROOM.DELETE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.ROOM.DELETE_FAILED)
+      );
     }
   };
 
@@ -112,7 +117,9 @@ const RoomManagement = () => {
       await loadRooms();
     } catch (error) {
       console.error("Error saving room:", error);
-      message.error(NOTIFICATION_MESSAGES.ROOM.SAVE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.ROOM.SAVE_FAILED)
+      );
     }
   };
 

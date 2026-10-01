@@ -6,6 +6,7 @@ import {
   formatMedicalResultForAPI,
 } from "../features/medical/medicalResultApi";
 import { MEDICAL_RESULT_MESSAGES } from "../features/medical/medicalResultMessages";
+import { getApiErrorMessage } from "../shared/api/errors";
 
 /**
  * Custom hook for managing medical result operations
@@ -80,10 +81,10 @@ export const useMedicalResult = (options = {}) => {
           data: response.data,
         };
       } catch (error) {
-        const errorMessage =
-          error.response?.data?.message ||
-          error.message ||
-          MEDICAL_RESULT_MESSAGES.SAVE_ERROR_FALLBACK;
+        const errorMessage = getApiErrorMessage(
+          error,
+          MEDICAL_RESULT_MESSAGES.SAVE_ERROR_FALLBACK
+        );
 
         setErrors({
           submit: errorMessage,

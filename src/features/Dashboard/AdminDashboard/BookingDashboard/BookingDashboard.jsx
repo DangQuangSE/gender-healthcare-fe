@@ -13,6 +13,7 @@ import {
 import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { getAppointmentsByStatus } from "../../../appointments/appointmentApi";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 import {
   APPOINTMENT_STATUS_KEYS,
   APPOINTMENT_STATUSES,
@@ -107,7 +108,9 @@ const BookingDashboard = () => {
       console.log(" Sample appointment data:", sortedData[0]);
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      message.error(NOTIFICATION_MESSAGES.BOOKING.LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.BOOKING.LOAD_FAILED)
+      );
       setAppointments([]);
     } finally {
       setLoading(false);
