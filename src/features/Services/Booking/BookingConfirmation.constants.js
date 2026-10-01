@@ -8,6 +8,8 @@ export const BOOKING_DEPOSIT_RATE = 0.2;
 
 export const BOOKING_PAYMENT_COPY = Object.freeze({
   TITLE: "Phương thức thanh toán",
+  FREE_LABEL: "Miễn phí - không cần thanh toán",
+  FREE_DESCRIPTION: "Bạn chỉ cần xác nhận lịch hẹn để tiếp tục.",
   DEPOSIT_LABEL: "Thanh toán trước 20% qua PayOS",
   DEPOSIT_DESCRIPTION: "Thanh toán một phần qua cổng PayOS",
   FULL_LABEL: "Thanh toán toàn bộ qua PayOS",

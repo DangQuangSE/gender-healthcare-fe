@@ -4,6 +4,7 @@ xanh đậm 2 #086ce4
 xanh đậm 3 #0283f5  */
 
 .footer {
+  flex: 0 0 auto;
   background: #fff;
   background-color: #0283f560;
   color: #fff; /* Màu chữ xanh đậm */

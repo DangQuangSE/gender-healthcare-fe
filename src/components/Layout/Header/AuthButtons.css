@@ -34,6 +34,73 @@
   box-shadow: var(--shadow-md);
 }
 
+/* ===== HEADER LOGIN BUTTON ===== */
+.header-login-button.ant-btn {
+  position: relative;
+  isolation: isolate;
+  min-width: 144px;
+  height: 46px;
+  padding: 0 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #064db8 0%, #086acb 52%, #2147ae 100%) !important;
+  box-shadow:
+    0 10px 22px rgba(8, 108, 228, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+  color: #ffffff !important;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+.header-login-button.ant-btn .header-login-label {
+  display: flex;
+  align-items: center;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+
+.gradient-button.header-login-button.ant-btn:not(.exit-ok-btn):hover:not(:disabled),
+.gradient-button.header-login-button.ant-btn:not(.exit-ok-btn):focus-visible:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.42) !important;
+  background: linear-gradient(135deg, #0759c2 0%, #0872d4 52%, #2c51bf 100%) !important;
+  box-shadow:
+    0 14px 26px rgba(8, 108, 228, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34) !important;
+  color: #ffffff !important;
+  filter: saturate(1.08) !important;
+  transform: translateY(-2px) !important;
+}
+
+.gradient-button.header-login-button.ant-btn:not(.exit-ok-btn):focus-visible:not(:disabled) {
+  outline: 3px solid #0759c2;
+  outline-offset: 3px;
+}
+
+.gradient-button.header-login-button.ant-btn:not(.exit-ok-btn):active:not(:disabled) {
+  background: linear-gradient(135deg, #0648ad 0%, #075fc7 52%, #1f43a5 100%) !important;
+  box-shadow:
+    0 6px 14px rgba(8, 108, 228, 0.22),
+    inset 0 2px 5px rgba(0, 35, 112, 0.18) !important;
+  transform: translateY(0) !important;
+}
+
+@media (max-width: 768px) {
+  .header-login-button.ant-btn {
+    min-width: 128px;
+    height: 42px;
+    padding: 0 18px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+}
+
 /* ===== USER DROPDOWN MENU STYLES ===== */
 .ant-dropdown-menu {
   min-width: 200px !important;

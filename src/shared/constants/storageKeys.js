@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   USER: "user",
   PENDING_BOOKING: "pendingBooking",
   LEGACY_PENDING_BOOKING: "pendingbooking",
+  PENDING_BOOKING_PREVIEW: "pendingBookingPreview",
   PERSIST_ROOT: "persist:root",
   SELECTED_CONSULTANT_ID: "selectedConsultantId",
   SELECTED_CONSULTANT_NAME: "selectedConsultantName",

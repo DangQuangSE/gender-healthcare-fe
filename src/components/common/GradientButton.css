@@ -32,55 +32,13 @@
   background: linear-gradient(135deg, #ef4444, #dc2626) !important;
 }
 
-/* Hover */
-.gradient-button:hover {
+/* Keep the shared gradient button consistent with Ant Design's default hover variant. */
+.gradient-button.ant-btn:hover:not(:disabled),
+.gradient-button.ant-btn:focus-visible:not(:disabled),
+.gradient-button.ant-btn:active:not(:disabled) {
   transform: translateY(-1px);
-  /* box-shadow: 0 6px 8px rgba(0, 181, 241, 0.3); */
-  background: linear-gradient(to top, #0283f5, #086ce4);
-}
-
-.login-btn {
-  font-size: 16px;
-  font-weight: 600;
-  display: flex;
-  justify-content: center;
-  color: white !important;
-  transition: color 0.3s ease;
-}
-
-/* Khi hover vào button, đổi màu text thành xanh lá */
-.gradient-button:hover .login-btn {
-  color: #2753d0;
-}
-
-.gradient-button:hover .exit {
-  color: #ffffff;
-}
-.gradient-button .exit-ok {
-  color: #ffffff;
-}
-.exit-btn:hover {
-  background: linear-gradient(to top, #0283f5, #086ce4) !important;
-  color: #fff;
-  border: none;
-}
-.gradient-button:hover .login-title {
+  background: linear-gradient(to top, #0759c2, #086acb) !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
   color: #ffffff !important;
-}
-.exit-ok-btn {
-  background: linear-gradient(to bottom, #f52f88, #ff4699);
-  color: #fff;
-  border: none;
-}
-.exit-ok-btn:hover {
-  background: linear-gradient(90deg, #f52f88, #ff4699) !important;
-  color: #fff;
-}
-/* Restrict to specific context to avoid affecting other buttons */
-.gradient-button-container .ant-btn-variant-outlined:hover,
-.auth-buttons .ant-btn-variant-outlined:hover {
-  color: white !important;
-  background: #ff4d4f !important;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset,
-    rgba(243, 160, 160, 0.3) 0px 18px 36px -18px inset !important;
 }

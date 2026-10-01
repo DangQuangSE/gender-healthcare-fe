@@ -18,6 +18,7 @@ import {
   PAYMENT_INTENTS,
 } from "../../payments/paymentFlow";
 import { refreshPayOSStatus } from "../../payments/paymentStatus";
+import { processSuccessfulPaymentReturn } from "../../payments/paymentReturn";
 import { PAYMENT_VIEW_STATE } from "./Payment.constants";
 
 const Payment = () => {
@@ -41,7 +42,27 @@ const Payment = () => {
     );
     setStatusResponse(latest);
     if (isTerminalPaymentStatus(latest?.paymentStatus)) {
-      bookingStorage.removePendingBooking();
+      let shouldClearPendingBooking = latest.paymentStatus !== "SUCCESS";
+      if (latest.paymentStatus === "SUCCESS") {
+        try {
+          const result = await processSuccessfulPaymentReturn({
+            paymentStatus: latest,
+            pendingBooking: booking,
+            orderCode,
+          });
+          if (result.unresolved) {
+            message.error(PAYMENT_MESSAGES.APPOINTMENT_CORRELATION_FAILED);
+          } else {
+            shouldClearPendingBooking = true;
+          }
+        } catch (error) {
+          message.error(getApiErrorMessage(
+            error,
+            PAYMENT_MESSAGES.ONLINE_MEETING_CREATION_FAILED,
+          ));
+        }
+      }
+      if (shouldClearPendingBooking) bookingStorage.removePendingBooking();
       setViewState(latest.paymentStatus === "SUCCESS"
         ? PAYMENT_VIEW_STATE.SUCCESS
         : PAYMENT_VIEW_STATE.ERROR);
@@ -50,7 +71,7 @@ const Payment = () => {
 
     setViewState(PAYMENT_VIEW_STATE.PENDING);
     return latest;
-  }, []);
+  }, [booking]);
 
   useEffect(() => {
     let active = true;

@@ -44,6 +44,7 @@ export const BOOKING_TEXT = Object.freeze({
   VIEW_DETAIL: "Xem chi tiết",
   CANCEL: "Hủy lịch hẹn",
   ONLINE_CONSULTATION: "Tư vấn Online",
+  CREATE_ONLINE_ROOM: "Tạo phòng tư vấn",
   VIEW_RESULT: "Kết quả",
   EDIT_RATING: "Sửa đánh giá",
   RATE: "Đánh giá",

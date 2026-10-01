@@ -13,6 +13,24 @@ const bookingStorage = {
     storage.setJson(STORAGE_KEYS.PENDING_BOOKING, booking);
   },
 
+  getPendingPreview() {
+    return storage.getJson(STORAGE_KEYS.PENDING_BOOKING_PREVIEW);
+  },
+
+  setPendingPreview(preview) {
+    storage.setJson(STORAGE_KEYS.PENDING_BOOKING_PREVIEW, preview);
+  },
+
+  removePendingPreview() {
+    storage.remove(STORAGE_KEYS.PENDING_BOOKING_PREVIEW);
+  },
+
+  clearSelectedConsultant() {
+    storage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_ID);
+    storage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_NAME);
+    storage.remove(STORAGE_KEYS.SELECTED_CONSULTANT_SPECIALIZATION);
+  },
+
   removePendingBooking() {
     storage.remove(STORAGE_KEYS.PENDING_BOOKING);
     storage.remove(STORAGE_KEYS.LEGACY_PENDING_BOOKING);
