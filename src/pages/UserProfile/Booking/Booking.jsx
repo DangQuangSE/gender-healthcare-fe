@@ -13,10 +13,8 @@ import {
 import { refreshPayOSStatus } from "../../../features/payments/paymentStatus";
 import {
   cancelAppointment,
-  createOnlineMeeting,
   getAppointmentsByStatus,
 } from "../../../features/appointments/appointmentApi";
-import { createNotification } from "../../../features/notifications/notificationApi";
 import authStorage from "../../../shared/storage/authStorage";
 import bookingStorage from "../../../shared/storage/bookingStorage";
 import RatingModal from "../../../components/RatingModal/RatingModal";
@@ -26,25 +24,13 @@ import BookingDetailModal from "./BookingDetailModal";
 import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
 import { PAYMENT_MESSAGES } from "../../../shared/constants/paymentMessages";
 import { getApiErrorMessage } from "../../../shared/api/errors";
+import { processSuccessfulPaymentReturn } from "../../../features/payments/paymentReturn";
 import {
   APPOINTMENT_STATUS_BY_TAB,
   BOOKING_TABS,
   BOOKING_TEXT,
 } from "./Booking.constants";
 import "./Booking.css";
-
-const createAppointmentNotification = async (appointmentId) => {
-  try {
-    await createNotification({
-      title: NOTIFICATION_MESSAGES.BOOKING.APPOINTMENT_TITLE,
-      content: NOTIFICATION_MESSAGES.BOOKING.APPOINTMENT_CONTENT,
-      type: "APPOINTMENT",
-      appointmentId,
-    });
-  } catch {
-    // Notification creation is not allowed to interrupt the booking flow.
-  }
-};
 
 const Booking = () => {
   const [appointments, setAppointments] = useState([]);
@@ -116,20 +102,6 @@ const Booking = () => {
     }
   };
 
-  const createZoomMeetingForAppointment = useCallback(
-    async (appointmentId) => {
-      try {
-        await createOnlineMeeting(appointmentId);
-        message.success(NOTIFICATION_MESSAGES.BOOKING.ONLINE_ROOM_CREATED);
-        setTimeout(fetchAppointments, 1000);
-      } catch (error) {
-        // Meeting creation can be retried from the appointment detail flow.
-        message.error(getApiErrorMessage(error));
-      }
-    },
-    [fetchAppointments]
-  );
-
   const handleCancelAppointment = async (appointmentId) => {
     if (!window.confirm(NOTIFICATION_MESSAGES.BOOKING.CANCEL_CONFIRM)) return;
     try {
@@ -175,24 +147,33 @@ const Booking = () => {
       );
 
       if (isTerminalPaymentStatus(latest?.paymentStatus)) {
-        bookingStorage.removePendingBooking();
+        let shouldClearPendingBooking = latest.paymentStatus !== "SUCCESS";
         if (latest.paymentStatus === "SUCCESS") {
-          message.success(PAYMENT_MESSAGES.SUCCESS);
-          setTimeout(async () => {
-            try {
-              const response = await getAppointmentsByStatus("CONFIRMED");
-              const latestAppointment = response.data?.[response.data.length - 1];
-              if (latestAppointment) {
-                createAppointmentNotification(latestAppointment.id);
-                createZoomMeetingForAppointment(latestAppointment.id);
+          try {
+            const result = await processSuccessfulPaymentReturn({
+              paymentStatus: latest,
+              pendingBooking: bookingStorage.getPendingBooking(),
+              orderCode: returnState.orderCode,
+            });
+            if (result.unresolved) {
+              message.error(PAYMENT_MESSAGES.APPOINTMENT_CORRELATION_FAILED);
+            } else {
+              shouldClearPendingBooking = true;
+              message.success(PAYMENT_MESSAGES.SUCCESS);
+              if (!result.skipped) {
+                message.success(NOTIFICATION_MESSAGES.BOOKING.ONLINE_ROOM_CREATED);
               }
-            } catch {
-              // The appointment list refresh remains the source of truth.
             }
-          }, 2000);
+          } catch (error) {
+            message.error(getApiErrorMessage(
+              error,
+              PAYMENT_MESSAGES.ONLINE_MEETING_CREATION_FAILED,
+            ));
+          }
         } else {
           message.error(PAYMENT_MESSAGES.FAILED_OR_CANCELLED);
         }
+        if (shouldClearPendingBooking) bookingStorage.removePendingBooking();
       } else {
         message.info(PAYMENT_MESSAGES.PENDING);
       }
@@ -203,7 +184,6 @@ const Booking = () => {
     window.history.replaceState({}, document.title, BOOKING_TEXT.ROUTE);
     setTimeout(fetchAppointments, 500);
   }, [
-    createZoomMeetingForAppointment,
     fetchAppointments,
     search,
   ]);

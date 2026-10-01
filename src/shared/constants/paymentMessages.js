@@ -14,6 +14,8 @@ export const PAYMENT_MESSAGES = {
   RETURN_INVALID: "Liên kết trả về thanh toán không hợp lệ.",
   RETURN_CANCELLED: "Giao dịch thanh toán đã bị hủy.",
   STATUS_REFRESH_FAILED: "Chưa nhận được kết quả cuối cùng. Vui lòng kiểm tra lại sau.",
+  APPOINTMENT_CORRELATION_FAILED: "Không xác định được lịch hẹn từ giao dịch thanh toán. Vui lòng kiểm tra lại lịch hẹn.",
+  ONLINE_MEETING_CREATION_FAILED: "Thanh toán thành công nhưng chưa thể tạo phòng tư vấn trực tuyến. Vui lòng mở lại lịch hẹn để thử lại.",
   REFRESH_STATUS: "Kiểm tra trạng thái thanh toán",
   SUCCESS_SUBTITLE: "Bạn sẽ được chuyển hướng đến trang lịch hẹn trong 2 giây...",
   VIEW_BOOKING: "Xem lịch hẹn",
