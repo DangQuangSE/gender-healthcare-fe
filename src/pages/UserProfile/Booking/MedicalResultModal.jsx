@@ -4,6 +4,7 @@ import "./MedicalResultModal.css";
 import TreatmentProtocolViewModal from "../../../features/medical/components/TreatmentProtocolViewModal";
 import { getTreatmentProtocol } from "../../../features/medical/medicalApi";
 import { MEDICAL_RESULT_MESSAGES } from "../../../features/medical/medicalResultMessages";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 
 const MedicalResultModal = ({ visible, onClose, selectedResult }) => {
   const [loadingProtocol, setLoadingProtocol] = useState(false);
@@ -19,8 +20,13 @@ const MedicalResultModal = ({ visible, onClose, selectedResult }) => {
       const response = await getTreatmentProtocol(protocolId);
       setSelectedProtocol(response.data);
       setTreatmentProtocolModalVisible(true);
-    } catch {
-      message.error(MEDICAL_RESULT_MESSAGES.TREATMENT_PROTOCOL_LOAD_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(
+          error,
+          MEDICAL_RESULT_MESSAGES.TREATMENT_PROTOCOL_LOAD_FAILED
+        )
+      );
     } finally {
       setLoadingProtocol(false);
     }

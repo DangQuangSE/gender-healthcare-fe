@@ -10,6 +10,7 @@ import { getLoginSession, saveLoginSession } from "../../shared/auth/session";
 import { AUTH_MESSAGES } from "../../shared/constants/authMessages";
 import { USER_ROLES } from "../../shared/constants/roles";
 import { ROUTES } from "../../shared/constants/routes";
+import { getApiErrorMessage } from "../../shared/api/errors";
 import "./LoginForm.css";
 
 const LoginForm = ({ onClose }) => {
@@ -49,18 +50,13 @@ const LoginForm = ({ onClose }) => {
         navigate("/error");
       }
     } catch (err) {
-      if (err.response?.status === 401) {
-        toast.error(AUTH_MESSAGES.INVALID_CREDENTIALS);
-      } else if (
-        err.code === "ERR_NETWORK" ||
-        err.message?.includes("Network Error")
-      ) {
-        toast.error(AUTH_MESSAGES.NETWORK_ERROR);
-      } else if (err.code === "ERR_FAILED") {
-        toast.error(AUTH_MESSAGES.SERVER_CONNECTION_ERROR);
-      } else {
-        toast.error(err.message || AUTH_MESSAGES.UNKNOWN_LOGIN_ERROR);
-      }
+      const fallbackMessage =
+        err.response?.status === 401
+          ? AUTH_MESSAGES.INVALID_CREDENTIALS
+          : err.code === "ERR_FAILED"
+            ? AUTH_MESSAGES.SERVER_CONNECTION_ERROR
+            : AUTH_MESSAGES.UNKNOWN_LOGIN_ERROR;
+      toast.error(getApiErrorMessage(err, fallbackMessage));
     } finally {
       setLoading(false);
     }

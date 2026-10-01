@@ -4,7 +4,6 @@ import authStorage from "../../../shared/storage/authStorage";
 import { CLOUDINARY_UPLOAD_PRESET, CLOUDINARY_UPLOAD_URL } from "../../../shared/config/env";
 import CONTENT_MESSAGES from "../../../shared/constants/contentMessages";
 import {
-  BLOG_ERROR_MESSAGES_BY_STATUS,
   CONSULTANT_SCHEDULE_RANGE_DAYS,
 } from "./blogApi.constants";
 
@@ -64,15 +63,7 @@ export const likeBlog = async (blogId) => {
     throw new Error(CONTENT_MESSAGES.BLOG_LOGIN_REQUIRED);
   }
 
-  try {
-    return await apiClient.post(`/v1/blogs/${blogId}/like`);
-  } catch (error) {
-    const status = error.response?.status;
-    throw new Error(
-      BLOG_ERROR_MESSAGES_BY_STATUS.like[status] ||
-        CONTENT_MESSAGES.BLOG_LIKE_FAILED
-    );
-  }
+  return apiClient.post(`/v1/blogs/${blogId}/like`);
 };
 
 export const deleteBlog = async (blogId) => {
@@ -80,15 +71,7 @@ export const deleteBlog = async (blogId) => {
     throw new Error(CONTENT_MESSAGES.BLOG_LOGIN_REQUIRED);
   }
 
-  try {
-    return await apiClient.delete(`/v1/blogs/${blogId}`);
-  } catch (error) {
-    const status = error.response?.status;
-    throw new Error(
-      BLOG_ERROR_MESSAGES_BY_STATUS.delete[status] ||
-        CONTENT_MESSAGES.BLOG_DELETE_FAILED
-    );
-  }
+  return apiClient.delete(`/v1/blogs/${blogId}`);
 };
 
 export const submitBlog = (blogId) =>

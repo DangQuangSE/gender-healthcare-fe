@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, Table, message, Spin } from "antd";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 import { getMyConsultantFeedback } from "../../../feedback/feedbackApi";
 import "./ViewFeedback.css";
 
@@ -16,7 +17,9 @@ const ViewFeedback = () => {
       setFeedbacks(response.data);
     } catch (error) {
       console.error("Error fetching feedbacks:", error);
-      message.error(NOTIFICATION_MESSAGES.FEEDBACK.CONSULTANT_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.FEEDBACK.CONSULTANT_LOAD_FAILED)
+      );
     } finally {
       setLoading(false);
     }

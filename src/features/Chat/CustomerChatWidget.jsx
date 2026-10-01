@@ -33,6 +33,7 @@ import authStorage from "../../shared/storage/authStorage";
 import { createWebSocketClient } from "../../shared/api/websocketClient";
 import storage from "../../shared/storage/storage";
 import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
+import { getApiErrorMessage } from "../../shared/api/errors";
 import "./CustomerChatWidget.css";
 
 const { Text } = Typography;
@@ -265,8 +266,10 @@ const CustomerChatWidget = () => {
 
     try {
       await startChatSession(customerName);
-    } catch {
-      message.error(CUSTOMER_CHAT_MESSAGES.SESSION_START_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(error, CUSTOMER_CHAT_MESSAGES.SESSION_START_FAILED)
+      );
       setShowNameForm(true);
     }
   };
@@ -427,9 +430,11 @@ const CustomerChatWidget = () => {
 
       // Don't send via WebSocket - REST API is sufficient
       // WebSocket will receive the message from server after API processes it
-    } catch {
+    } catch (error) {
       setInputMessage(messageText);
-      message.error(CUSTOMER_CHAT_MESSAGES.MESSAGE_SEND_FAILED);
+      message.error(
+        getApiErrorMessage(error, CUSTOMER_CHAT_MESSAGES.MESSAGE_SEND_FAILED)
+      );
 
       // Don't add error message optimistically
       // Just log the error and let user retry

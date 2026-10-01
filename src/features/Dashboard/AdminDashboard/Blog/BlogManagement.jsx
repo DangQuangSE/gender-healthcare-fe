@@ -135,7 +135,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
       console.error(" Load blogs error:", error);
       toast.error(
         BLOG_MESSAGES.TOAST.LOAD_FAILED(
-          error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+          getApiErrorMessage(error, BLOG_MESSAGES.TOAST.UNKNOWN_ERROR)
         )
       );
       setBlogs([]);
@@ -190,7 +190,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
     } catch (error) {
       toast.error(
         BLOG_MESSAGES.TOAST.STATUS_LOAD_FAILED(
-          error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+          getApiErrorMessage(error, BLOG_MESSAGES.TOAST.UNKNOWN_ERROR)
         )
       );
       setBlogs([]);
@@ -253,7 +253,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
       setBlogs(processedBlogs);
     } catch (error) {
       console.error("Error filtering blogs by tags:", error);
-      toast.error(BLOG_MESSAGES.TOAST.FILTER_FAILED);
+      toast.error(getApiErrorMessage(error, BLOG_MESSAGES.TOAST.FILTER_FAILED));
       setBlogs([]);
     }
   };
@@ -279,7 +279,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
 
     } catch (error) {
       console.error(" Error approving blog:", error);
-      toast.error(BLOG_MESSAGES.TOAST.APPROVE_FAILED);
+      toast.error(getApiErrorMessage(error, BLOG_MESSAGES.TOAST.APPROVE_FAILED));
     }
   };
 
@@ -290,7 +290,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
       loadBlogs();
     } catch (error) {
       console.error(" Error rejecting blog:", error);
-      toast.error(BLOG_MESSAGES.TOAST.REJECT_FAILED);
+      toast.error(getApiErrorMessage(error, BLOG_MESSAGES.TOAST.REJECT_FAILED));
     }
   };
 
@@ -302,7 +302,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
       await loadBlogs(); // Tải lại danh sách
     } catch (error) {
       console.error(" Error publishing blog:", error);
-      toast.error(BLOG_MESSAGES.TOAST.PUBLISH_FAILED);
+      toast.error(getApiErrorMessage(error, BLOG_MESSAGES.TOAST.PUBLISH_FAILED));
     }
   };
 
@@ -388,7 +388,7 @@ const BlogManagement = ({ userId, selectedTab }) => {
 
       toast.error(
         `${BLOG_MESSAGES.TOAST.DETAIL_FAILED}: ${
-          error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+          getApiErrorMessage(error, BLOG_MESSAGES.TOAST.UNKNOWN_ERROR)
         }`
       );
 
@@ -511,16 +511,10 @@ const BlogManagement = ({ userId, selectedTab }) => {
 
       toast.success(BLOG_MESSAGES.TOAST.CREATE_SUCCESS);
     } catch (error) {
-      let errorMessage = BLOG_MESSAGES.TOAST.UNKNOWN_ERROR;
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.status === 500) {
-        errorMessage = BLOG_MESSAGES.TOAST.SYSTEM_ERROR;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
+      const errorMessage = getApiErrorMessage(
+        error,
+        BLOG_MESSAGES.TOAST.SYSTEM_ERROR
+      );
       toast.error(BLOG_MESSAGES.TOAST.BLOG_ERROR(errorMessage));
     } finally {
       setCreateBlogLoading(false);
@@ -591,10 +585,10 @@ const BlogManagement = ({ userId, selectedTab }) => {
       toast.success(BLOG_MESSAGES.TOAST.UPDATE_SUCCESS);
     } catch (error) {
       console.error(" Edit blog error:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR;
+      const errorMessage = getApiErrorMessage(
+        error,
+        BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+      );
       toast.error(BLOG_MESSAGES.TOAST.UPDATE_ERROR(errorMessage));
     }
   };
@@ -606,8 +600,10 @@ const BlogManagement = ({ userId, selectedTab }) => {
       toast.success(BLOG_MESSAGES.TOAST.DELETE_SUCCESS);
       loadBlogs();
     } catch (error) {
-      const errorMessage =
-        error.message || BLOG_MESSAGES.TOAST.DELETE_FAILED;
+      const errorMessage = getApiErrorMessage(
+        error,
+        BLOG_MESSAGES.TOAST.DELETE_FAILED
+      );
       toast.error(errorMessage);
       if (errorMessage.includes("đăng nhập")) {
         setTimeout(() => {
@@ -698,8 +694,10 @@ const BlogManagement = ({ userId, selectedTab }) => {
       const res = await uploadImage(file);
       createBlogForm.setFieldsValue({ imgUrl: res.data.secure_url });
       toast.success(BLOG_MESSAGES.TOAST.IMAGE_UPLOAD_SUCCESS);
-    } catch {
-      toast.error(BLOG_MESSAGES.TOAST.IMAGE_UPLOAD_FAILED);
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, BLOG_MESSAGES.TOAST.IMAGE_UPLOAD_FAILED)
+      );
     } finally {
       setImageUploading(false);
     }

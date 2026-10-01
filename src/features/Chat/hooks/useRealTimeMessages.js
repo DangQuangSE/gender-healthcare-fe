@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import unifiedChatAPI from "../unifiedChatAPI";
 import { POLLING_INTERVALS } from "./useRealTimeMessages.constants";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 
 // Simple UUID generator for client-side message IDs
 const generateClientId = () => {
@@ -135,7 +136,7 @@ export const useRealTimeMessages = (
         });
       } catch (err) {
         if (!isUnmountedRef.current) {
-          setError(err.message);
+          setError(getApiErrorMessage(err));
         }
       }
     },

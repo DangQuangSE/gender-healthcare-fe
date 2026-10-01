@@ -12,6 +12,7 @@ import CertificateList from "./CertificateList";
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileForm from "./ProfileForm";
 import { useProfileData } from "./useProfileData";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 import {
   PROFILE_MESSAGES,
   PROFILE_ROLES,
@@ -49,8 +50,8 @@ const Profile = () => {
       const nextImageUrl = await uploadProfileAvatar(file);
       dispatch(updateUserAvatar({ imageUrl: nextImageUrl }));
       message.success(PROFILE_MESSAGES.IMAGE_UPLOAD_SUCCESS);
-    } catch {
-      message.error(PROFILE_MESSAGES.IMAGE_UPLOAD_FAILED);
+    } catch (error) {
+      message.error(getApiErrorMessage(error, PROFILE_MESSAGES.IMAGE_UPLOAD_FAILED));
     } finally {
       setUploading(false);
     }
@@ -63,8 +64,8 @@ const Profile = () => {
       await saveProfile(values);
       message.success(PROFILE_MESSAGES.UPDATE_SUCCESS);
       setEditing(false);
-    } catch {
-      message.error(PROFILE_MESSAGES.UPDATE_FAILED);
+    } catch (error) {
+      message.error(getApiErrorMessage(error, PROFILE_MESSAGES.UPDATE_FAILED));
     } finally {
       setLoading(false);
     }
@@ -82,8 +83,10 @@ const Profile = () => {
       setCertificateModalVisible(false);
       setEditingCertificate(null);
       message.success(PROFILE_MESSAGES.CERTIFICATE_UPDATE_SUCCESS);
-    } catch {
-      message.error(PROFILE_MESSAGES.CERTIFICATE_UPDATE_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(error, PROFILE_MESSAGES.CERTIFICATE_UPDATE_FAILED)
+      );
     } finally {
       setCertificateLoading(false);
     }
@@ -93,8 +96,10 @@ const Profile = () => {
     try {
       await removeCertificate(certificateId);
       message.success(PROFILE_MESSAGES.CERTIFICATE_DELETE_SUCCESS);
-    } catch {
-      message.error(PROFILE_MESSAGES.CERTIFICATE_DELETE_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(error, PROFILE_MESSAGES.CERTIFICATE_DELETE_FAILED)
+      );
     }
   };
 

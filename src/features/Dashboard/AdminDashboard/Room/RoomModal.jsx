@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Modal, Form, Input, Select, TimePicker, message } from "antd";
 import { fetchSpecializations } from "../../../catalog/api/specializationApi";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 // import dayjs from "dayjs";
 
 const { TextArea } = Input;
@@ -26,7 +27,12 @@ const RoomModal = ({ visible, onOk, onCancel, form, editingRoom }) => {
       setSpecializations(data);
     } catch (error) {
       console.error("Error loading specializations:", error);
-      message.error(NOTIFICATION_MESSAGES.ROOM.SPECIALIZATIONS_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.ROOM.SPECIALIZATIONS_LOAD_FAILED
+        )
+      );
     } finally {
       setLoading(false);
     }

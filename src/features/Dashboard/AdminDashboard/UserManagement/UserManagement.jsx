@@ -27,6 +27,7 @@ import {
   removeUserSpecialization,
 } from "../../../admin/api/userApi";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 import "./UserManagement.css";
 
 const { TabPane } = Tabs;
@@ -206,12 +207,12 @@ const UserManagement = ({ form }) => {
       console.error(" Error updating specializations:", error);
       console.error("Error details:", error.response?.data);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        NOTIFICATION_MESSAGES.USER_MANAGEMENT.SPECIALIZATIONS_UPDATE_FAILED;
-      message.error(errorMessage);
+      message.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.USER_MANAGEMENT.SPECIALIZATIONS_UPDATE_FAILED
+        )
+      );
     }
   };
 

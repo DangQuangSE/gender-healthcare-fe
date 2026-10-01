@@ -28,6 +28,7 @@ import {
 } from "../../../catalog/configApi";
 import "./ConfigManagement.css";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const { Title } = Typography;
 
@@ -51,7 +52,9 @@ const ConfigManagement = () => {
       setConfigs(response.data || []);
     } catch (error) {
       console.error("Error loading configs:", error);
-      message.error(NOTIFICATION_MESSAGES.CONFIG.LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.CONFIG.LOAD_FAILED)
+      );
     } finally {
       setLoading(false);
     }
@@ -83,9 +86,12 @@ const ConfigManagement = () => {
       console.error("Error saving config:", error);
       console.error("Error response:", error.response?.data);
       message.error(
-        editingConfig
-          ? NOTIFICATION_MESSAGES.CONFIG.UPDATE_FAILED
-          : NOTIFICATION_MESSAGES.CONFIG.CREATE_FAILED
+        getApiErrorMessage(
+          error,
+          editingConfig
+            ? NOTIFICATION_MESSAGES.CONFIG.UPDATE_FAILED
+            : NOTIFICATION_MESSAGES.CONFIG.CREATE_FAILED
+        )
       );
     }
   };
@@ -98,7 +104,9 @@ const ConfigManagement = () => {
       loadConfigs();
     } catch (error) {
       console.error("Error deleting config:", error);
-      message.error(NOTIFICATION_MESSAGES.CONFIG.DELETE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.CONFIG.DELETE_FAILED)
+      );
     }
   };
 

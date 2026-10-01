@@ -51,8 +51,14 @@ const MedicalResultFormConsulting = ({
       setLoadingProtocols(true);
       const response = await getTreatmentProtocols();
       setTreatmentProtocols(response.data || []);
-    } catch {
+    } catch (error) {
       setTreatmentProtocols([]);
+      message.error(
+        getApiErrorMessage(
+          error,
+          MEDICAL_RESULT_MESSAGES.TREATMENT_PROTOCOL_LOAD_FAILED
+        )
+      );
     } finally {
       setLoadingProtocols(false);
     }

@@ -26,6 +26,7 @@ import ServiceModal from "./ServiceModal";
 import ServiceDetailModal from "./ServiceDetailModal";
 import { createServiceManagementColumns } from "./ServiceManagementColumns";
 import { SERVICE_MANAGEMENT_MESSAGES } from "./serviceManagementMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 import "./ServiceManagement.css";
 
 const getServiceTypeColor = (serviceType) => {
@@ -87,7 +88,9 @@ const ServiceManagement = () => {
       return filteredData;
     } catch (error) {
       console.error(" Lỗi lấy danh sách services:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.COMBO_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.COMBO_LOAD_FAILED)
+      );
       return [];
     }
   };
@@ -190,7 +193,9 @@ const ServiceManagement = () => {
       setServices(data);
     } catch (error) {
       console.error("Error loading services:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.LOAD_FAILED)
+      );
     }
   }, []);
 
@@ -230,7 +235,9 @@ const ServiceManagement = () => {
       setIsServiceModalVisible(true);
     } catch (error) {
       console.error("Lỗi lấy chi tiết dịch vụ:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.DETAIL_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.DETAIL_LOAD_FAILED)
+      );
     }
   };
 
@@ -241,7 +248,9 @@ const ServiceManagement = () => {
       setIsServiceDetailModalVisible(true);
     } catch (error) {
       console.error("Lỗi lấy chi tiết dịch vụ:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.DETAIL_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.DETAIL_LOAD_FAILED)
+      );
     }
   };
 
@@ -258,7 +267,9 @@ const ServiceManagement = () => {
       await loadServices();
     } catch (error) {
       console.error("Lỗi thay đổi trạng thái dịch vụ:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.STATUS_UPDATE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.STATUS_UPDATE_FAILED)
+      );
     }
   };
 
@@ -291,7 +302,9 @@ const ServiceManagement = () => {
       message.success(NOTIFICATION_MESSAGES.SERVICE.CREATE_SUCCESS);
     } catch (error) {
       console.error(" Lỗi tạo dịch vụ thường:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.CREATE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.CREATE_FAILED)
+      );
     }
   };
 
@@ -324,7 +337,9 @@ const ServiceManagement = () => {
       message.success(NOTIFICATION_MESSAGES.SERVICE.COMBO_CREATE_SUCCESS);
     } catch (error) {
       console.error(" Lỗi tạo gói dịch vụ:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.COMBO_CREATE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.COMBO_CREATE_FAILED)
+      );
     }
   };
 
@@ -344,7 +359,9 @@ const ServiceManagement = () => {
       message.success(NOTIFICATION_MESSAGES.SERVICE.UPDATE_SUCCESS);
     } catch (error) {
       console.error(" Lỗi cập nhật dịch vụ:", error);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.UPDATE_FAILED);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.UPDATE_FAILED)
+      );
     }
   };
 
@@ -388,7 +405,9 @@ const ServiceManagement = () => {
     } catch (error) {
       console.error("Lỗi tìm kiếm:", error);
       setSearchResults([]);
-      message.error(NOTIFICATION_MESSAGES.SERVICE.NOT_FOUND);
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SERVICE.NOT_FOUND)
+      );
     } finally {
       setIsSearching(false);
     }

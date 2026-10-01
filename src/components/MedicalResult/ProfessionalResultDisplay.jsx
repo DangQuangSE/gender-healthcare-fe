@@ -12,6 +12,7 @@ import {
 import TreatmentProtocolViewModal from "../../features/medical/components/TreatmentProtocolViewModal";
 import { getTreatmentProtocol } from "../../features/medical/medicalApi";
 import { MEDICAL_RESULT_MESSAGES } from "../../features/medical/medicalResultMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 
 
 // Professional Medical Result Display Component
@@ -34,8 +35,13 @@ const ProfessionalResultDisplay = ({ result }) => {
       const response = await getTreatmentProtocol(protocolId);
       setSelectedProtocol(response.data);
       setTreatmentProtocolModalVisible(true);
-    } catch {
-      message.error(MEDICAL_RESULT_MESSAGES.TREATMENT_PROTOCOL_LOAD_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(
+          error,
+          MEDICAL_RESULT_MESSAGES.TREATMENT_PROTOCOL_LOAD_FAILED
+        )
+      );
     } finally {
       setLoadingProtocol(false);
     }

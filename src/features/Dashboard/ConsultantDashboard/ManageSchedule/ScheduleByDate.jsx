@@ -23,6 +23,7 @@ import {
 } from "../../../scheduling/scheduleApi";
 import dayjs from "dayjs";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const { Panel } = Collapse;
 
@@ -53,7 +54,9 @@ const ScheduleByDate = ({ userId, onEditSchedule }) => {
       }
     } catch (error) {
       console.error("Error loading schedule data:", error);
-      toast.error(NOTIFICATION_MESSAGES.SCHEDULE.LOAD_FAILED);
+      toast.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SCHEDULE.LOAD_FAILED)
+      );
       setScheduleData([]);
     } finally {
       setLoading(false);
@@ -76,7 +79,9 @@ const ScheduleByDate = ({ userId, onEditSchedule }) => {
       loadScheduleData(); // Reload data
     } catch (error) {
       console.error("Error canceling schedule:", error);
-      toast.error(NOTIFICATION_MESSAGES.SCHEDULE.CANCEL_FAILED);
+      toast.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SCHEDULE.CANCEL_FAILED)
+      );
     }
   };
 

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import BookingForm from "../../Booking/BookingForm";
-import { Tabs, Card, Avatar, Modal, Button } from "antd";
+import { Tabs, Card, Avatar, Modal, Button, message } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import "./ServiceDetail.css";
 import { getConsultants, getServiceById } from "../../../catalog/catalogApi";
 import { getServiceFeedback } from "../../../feedback/feedbackApi";
 import bookingStorage from "../../../../shared/storage/bookingStorage";
 import { STORAGE_KEYS } from "../../../../shared/constants/storageKeys";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 const ServiceDetail = () => {
   const { id } = useParams();
   const [service, setService] = useState(null);
@@ -71,10 +72,11 @@ const ServiceDetail = () => {
         setFeedbacks(feedbackResponse.data || []);
         setConsultants(consultantResponse.data || []);
       })
-      .catch(() => {
+      .catch((error) => {
         setService(null);
         setFeedbacks([]);
         setConsultants([]);
+        message.error(getApiErrorMessage(error));
       })
       .finally(() => setLoading(false));
   }, [id]);

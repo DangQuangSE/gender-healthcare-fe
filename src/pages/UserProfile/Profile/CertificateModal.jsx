@@ -11,6 +11,7 @@ import {
   createEmptyCertificate,
   normalizeCertificates,
 } from "./CertificateModal.constants";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 
 const CertificateModal = ({
   visible,
@@ -68,8 +69,10 @@ const CertificateModal = ({
           await updateCertification(certificate.id, formData);
           message.success(CERTIFICATE_MESSAGES.UPDATE_SUCCESS);
           onSave();
-        } catch {
-          message.error(CERTIFICATE_MESSAGES.UPDATE_FAILED);
+        } catch (error) {
+          message.error(
+            getApiErrorMessage(error, CERTIFICATE_MESSAGES.UPDATE_FAILED)
+          );
         }
         return;
       }
@@ -93,8 +96,10 @@ const CertificateModal = ({
           try {
             const response = await createCertification(formData);
             return response?.data ?? response;
-          } catch {
-            message.error(CERTIFICATE_MESSAGES.CREATE_FAILED(index));
+          } catch (error) {
+            message.error(
+              getApiErrorMessage(error, CERTIFICATE_MESSAGES.CREATE_FAILED(index))
+            );
             return null;
           }
         })

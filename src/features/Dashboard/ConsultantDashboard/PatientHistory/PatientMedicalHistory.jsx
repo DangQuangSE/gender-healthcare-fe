@@ -18,6 +18,7 @@ import { getPatientMedicalHistory } from "../../../medical/patientHistoryApi";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const { Title, Text } = Typography;
 
@@ -41,7 +42,9 @@ const PatientMedicalHistory = ({ patientId }) => {
       console.log("[PATIENT_HISTORY] Loaded successfully:", response.data);
     } catch (error) {
       console.error(" [PATIENT_HISTORY] Error loading patient history:", error);
-      toast.error(NOTIFICATION_MESSAGES.PATIENT_HISTORY.LOAD_FAILED);
+      toast.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.PATIENT_HISTORY.LOAD_FAILED)
+      );
     } finally {
       setLoading(false);
     }

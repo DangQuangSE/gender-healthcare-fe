@@ -130,7 +130,7 @@ const WriteBlogs = ({ userId, selectedTab }) => {
     } catch (error) {
       toast.error(
         BLOG_MESSAGES.TOAST.LOAD_FAILED(
-          error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+          getApiErrorMessage(error, BLOG_MESSAGES.TOAST.UNKNOWN_ERROR)
         )
       );
       setBlogs([]);
@@ -185,7 +185,7 @@ const WriteBlogs = ({ userId, selectedTab }) => {
     } catch (error) {
       toast.error(
         BLOG_MESSAGES.TOAST.STATUS_LOAD_FAILED(
-          error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+          getApiErrorMessage(error, BLOG_MESSAGES.TOAST.UNKNOWN_ERROR)
         )
       );
       setBlogs([]);
@@ -248,7 +248,7 @@ const WriteBlogs = ({ userId, selectedTab }) => {
       setBlogs(processedBlogs);
     } catch (error) {
       console.error("Error filtering blogs by tags:", error);
-      toast.error(BLOG_MESSAGES.TOAST.FILTER_FAILED);
+      toast.error(getApiErrorMessage(error, BLOG_MESSAGES.TOAST.FILTER_FAILED));
       setBlogs([]);
     }
   };
@@ -341,7 +341,7 @@ const WriteBlogs = ({ userId, selectedTab }) => {
     } catch (error) {
       toast.error(
         `${BLOG_MESSAGES.TOAST.DETAIL_FAILED}: ${
-          error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+          getApiErrorMessage(error, BLOG_MESSAGES.TOAST.UNKNOWN_ERROR)
         }`
       );
 
@@ -410,7 +410,10 @@ const WriteBlogs = ({ userId, selectedTab }) => {
           } catch (submitError) {
             toast.error(
               BLOG_MESSAGES.TOAST.SUBMIT_FAILED(
-                submitError.response?.data?.message || submitError.message
+                getApiErrorMessage(
+                  submitError,
+                  BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+                )
               )
             );
           }
@@ -477,16 +480,10 @@ const WriteBlogs = ({ userId, selectedTab }) => {
 
       toast.success(BLOG_MESSAGES.TOAST.CREATE_SUCCESS);
     } catch (error) {
-      let errorMessage = BLOG_MESSAGES.TOAST.UNKNOWN_ERROR;
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.status === 500) {
-        errorMessage = BLOG_MESSAGES.TOAST.SYSTEM_ERROR;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
+      const errorMessage = getApiErrorMessage(
+        error,
+        BLOG_MESSAGES.TOAST.SYSTEM_ERROR
+      );
       toast.error(BLOG_MESSAGES.TOAST.BLOG_ERROR(errorMessage));
     } finally {
       setCreateBlogLoading(false);
@@ -563,10 +560,10 @@ const WriteBlogs = ({ userId, selectedTab }) => {
       toast.success(BLOG_MESSAGES.TOAST.UPDATE_SUCCESS);
     } catch (error) {
       console.error(" Edit blog error:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message || BLOG_MESSAGES.TOAST.UNKNOWN_ERROR;
+      const errorMessage = getApiErrorMessage(
+        error,
+        BLOG_MESSAGES.TOAST.UNKNOWN_ERROR
+      );
       toast.error(BLOG_MESSAGES.TOAST.UPDATE_ERROR(errorMessage));
     }
   };
@@ -586,10 +583,10 @@ const WriteBlogs = ({ userId, selectedTab }) => {
       }
     } catch (error) {
       console.error(" Delete blog error:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message || BLOG_MESSAGES.TOAST.DELETE_FAILED;
+      const errorMessage = getApiErrorMessage(
+        error,
+        BLOG_MESSAGES.TOAST.DELETE_FAILED
+      );
       toast.error(errorMessage);
 
       if (
@@ -684,8 +681,10 @@ const WriteBlogs = ({ userId, selectedTab }) => {
       const res = await uploadImage(file);
       createBlogForm.setFieldsValue({ imgUrl: res.data.secure_url });
       toast.success(BLOG_MESSAGES.TOAST.IMAGE_UPLOAD_SUCCESS);
-    } catch {
-      toast.error(BLOG_MESSAGES.TOAST.IMAGE_UPLOAD_FAILED);
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, BLOG_MESSAGES.TOAST.IMAGE_UPLOAD_FAILED)
+      );
     } finally {
       setImageUploading(false);
     }

@@ -9,6 +9,7 @@ import {
   updateTreatmentProtocol,
 } from "../../../medical/medicalApi";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const { TextArea } = Input;
 
@@ -25,8 +26,10 @@ const TreatmentProtocol = () => {
     try {
       const response = await getTreatmentProtocols();
       setProtocols(response.data);
-    } catch {
-      message.error(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.LOAD_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.LOAD_FAILED)
+      );
     }
   };
 
@@ -54,8 +57,10 @@ const TreatmentProtocol = () => {
       message.success(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.DELETE_SUCCESS);
       // Tải lại danh sách từ server
       await fetchTreatmentProtocols();
-    } catch {
-      message.error(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.DELETE_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.DELETE_FAILED)
+      );
     }
   };
 
@@ -88,8 +93,10 @@ const TreatmentProtocol = () => {
 
       setIsModalVisible(false);
       form.resetFields();
-    } catch {
-      message.error(NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.SAVE_FAILED);
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.TREATMENT_PROTOCOL.SAVE_FAILED)
+      );
     }
   };
 

@@ -31,6 +31,7 @@ import bookingStorage from "../../../shared/storage/bookingStorage";
 import { STORAGE_KEYS } from "../../../shared/constants/storageKeys";
 import NOTIFICATION_MESSAGES from "../../../shared/constants/notificationMessages";
 import { BOOKING_FORM_TAB_LABELS } from "./BookingForm.constants";
+import { getApiErrorMessage } from "../../../shared/api/errors";
 dayjs.extend(isSameOrBefore);
 
 const { Title, Text } = Typography;
@@ -67,7 +68,13 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
           setServiceDetail(parsed.serviceDTO);
           setScheduleData(parsed.scheduleResponses || []);
         })
-        .catch(() => {
+        .catch((error) => {
+          message.error(
+            getApiErrorMessage(
+              error,
+              "Không thể tải lịch dịch vụ. Vui lòng thử lại."
+            )
+          );
           setScheduleData([]);
         });
     }
@@ -122,7 +129,13 @@ const BookingForm = ({ serviceIdProp, serviceDetail: detailProp }) => {
           setSelectedConsultantId(Number(selectedConsultantId));
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        message.error(
+          getApiErrorMessage(
+            error,
+            "Không thể tải danh sách bác sĩ. Vui lòng thử lại."
+          )
+        );
         setConsultants([]);
       });
   }, []);

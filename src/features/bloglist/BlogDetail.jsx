@@ -8,6 +8,7 @@ import { fetchBlogSummary } from "../blog/api/commentApi";
 import storage from "../../shared/storage/storage";
 import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
 import CONTENT_MESSAGES from "../../shared/constants/contentMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 import {
   EyeIcon,
   HeartIcon,
@@ -133,7 +134,7 @@ const BlogDetail = () => {
 
       console.log(` Liked blog ${article.id}`);
     } catch (error) {
-      alert(error.message || CONTENT_MESSAGES.BLOG_LIKE_FAILED);
+      alert(getApiErrorMessage(error, CONTENT_MESSAGES.BLOG_LIKE_FAILED));
     } finally {
       setLiking(false);
     }

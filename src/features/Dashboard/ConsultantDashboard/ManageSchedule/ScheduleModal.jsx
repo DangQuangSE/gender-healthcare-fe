@@ -18,6 +18,7 @@ import dayjs from "dayjs";
 import { registerSchedule } from "../../../scheduling/scheduleApi";
 import "./ScheduleModal.css";
 import NOTIFICATION_MESSAGES from "../../../../shared/constants/notificationMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const { Title, Text } = Typography;
 
@@ -116,11 +117,9 @@ const ScheduleModal = ({ visible, onCancel, onSuccess }) => {
       onCancel();
     } catch (error) {
       console.error("Error registering schedule:", error);
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data ||
-        "Đăng ký lịch làm việc thất bại!";
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, NOTIFICATION_MESSAGES.SCHEDULE.REGISTER_FAILED)
+      );
     } finally {
       setLoading(false);
     }

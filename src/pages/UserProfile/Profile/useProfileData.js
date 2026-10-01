@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { message } from "antd";
 import {
   deleteCertification,
   getCurrentUser,
@@ -6,7 +7,8 @@ import {
   updateAvatar,
   updateProfile,
 } from "../../../features/profile/profileApi";
-import { toProfileFormValues } from "./Profile.constants";
+import { getApiErrorMessage } from "../../../shared/api/errors";
+import { PROFILE_MESSAGES, toProfileFormValues } from "./Profile.constants";
 
 const toProfilePayload = (values) => ({
   fullname: values.fullname,
@@ -83,12 +85,18 @@ export const useProfileData = (form) => {
   }, []);
 
   useEffect(() => {
-    loadUser();
+    loadUser().catch((error) => {
+      message.error(getApiErrorMessage(error, PROFILE_MESSAGES.LOAD_FAILED));
+    });
   }, [loadUser]);
 
   useEffect(() => {
     if (user?.role === "CONSULTANT") {
-      loadCertificates();
+      loadCertificates().catch((error) => {
+        message.error(
+          getApiErrorMessage(error, PROFILE_MESSAGES.CERTIFICATE_LOAD_FAILED)
+        );
+      });
     }
   }, [loadCertificates, user]);
 

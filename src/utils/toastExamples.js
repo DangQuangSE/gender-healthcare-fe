@@ -1,6 +1,7 @@
 // Ví dụ sử dụng Toast Utility trong các component
 
 import { showToast, toastMessages } from './toast';
+import { getApiErrorMessage } from '../shared/api/errors';
 
 // ===== CÁCH SỬ DỤNG CƠ BẢN =====
 
@@ -68,7 +69,7 @@ export const apiCallExample = async (apiFunction, successMessage, errorMessage) 
     showToast.updateLoading(loadingToastId, successMessage, "success");
     return result;
   } catch (error) {
-    const errorMsg = error.response?.data?.message || errorMessage;
+    const errorMsg = getApiErrorMessage(error, errorMessage);
     showToast.updateLoading(loadingToastId, errorMsg, "error");
     throw error;
   }

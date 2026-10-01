@@ -8,6 +8,7 @@ import {
   updateServiceFeedback,
 } from '../../features/feedback/feedbackApi';
 import './RatingModal.css';
+import { getApiErrorMessage } from '../../shared/api/errors';
 
 const { TextArea } = Input;
 
@@ -58,7 +59,9 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
 
         } catch (error) {
           console.error("Lỗi khi lấy đánh giá cũ:", error);
-          message.error(NOTIFICATION_MESSAGES.RATING.LOAD_FAILED);
+          message.error(
+            getApiErrorMessage(error, NOTIFICATION_MESSAGES.RATING.LOAD_FAILED)
+          );
         } finally {
           setLoading(false);
         }
@@ -115,8 +118,9 @@ const RatingModal = ({ visible, onClose, appointment, onSuccess }) => {
       } catch (error) {
         console.error("Lỗi khi gửi đánh giá:", error);
           message.error(
-            NOTIFICATION_MESSAGES.RATING.SUBMIT_FAILED(
-              error.response?.data?.message || error.message
+            getApiErrorMessage(
+              error,
+              NOTIFICATION_MESSAGES.RATING.SUBMIT_FAILED("Vui lòng thử lại.")
             )
           );
       } finally {

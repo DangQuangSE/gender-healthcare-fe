@@ -12,6 +12,7 @@ import { unwrapApiResponse } from "../../shared/api/response";
 import storage from "../../shared/storage/storage";
 import { STORAGE_KEYS } from "../../shared/constants/storageKeys";
 import CONTENT_MESSAGES from "../../shared/constants/contentMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 
 const getBlogsFromResponse = (response) => {
   const data = unwrapApiResponse(response?.data);
@@ -108,7 +109,7 @@ const Articles = () => {
       }, 2000);
     } catch (error) {
       // Show user-friendly error message
-      alert(error.message || CONTENT_MESSAGES.BLOG_LIKE_FAILED);
+      alert(getApiErrorMessage(error, CONTENT_MESSAGES.BLOG_LIKE_FAILED));
       // Revert optimistic update on error
       setArticles((prevArticles) =>
         prevArticles.map((article) =>

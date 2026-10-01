@@ -4,6 +4,7 @@ import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
 import authStorage from "../../shared/storage/authStorage";
 import { CONTENT_MESSAGES } from "../../shared/constants/contentMessages";
+import { getApiErrorMessage } from "../../shared/api/errors";
 import { fetchComments } from "../../features/blog/api/commentApi";
 import { CommentIcon } from "../Icons/BlogIcons";
 import "./CommentSection.css";
@@ -44,8 +45,8 @@ const CommentSection = ({
         : [];
 
       setComments(transformedComments);
-    } catch {
-      toast.error(CONTENT_MESSAGES.COMMENT_LOAD_FAILED);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, CONTENT_MESSAGES.COMMENT_LOAD_FAILED));
       setComments([]);
     } finally {
       setLoading(false);

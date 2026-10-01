@@ -18,6 +18,7 @@ import {
   CLOUDINARY_UPLOAD_URL,
 } from "../../../../shared/config/env";
 import USER_MESSAGES from "../../../../shared/constants/userMessages";
+import { getApiErrorMessage } from "../../../../shared/api/errors";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -44,7 +45,9 @@ const CreateUserModal = ({ visible, onOk, onCancel, form, editingUser }) => {
       setSpecializations(data);
     } catch (error) {
       console.error("Error loading specializations:", error);
-      message.error(USER_MESSAGES.SPECIALIZATIONS_LOAD_FAILED);
+      message.error(
+        getApiErrorMessage(error, USER_MESSAGES.SPECIALIZATIONS_LOAD_FAILED)
+      );
     } finally {
       setLoadingSpecializations(false);
     }
@@ -103,7 +106,7 @@ const CreateUserModal = ({ visible, onOk, onCancel, form, editingUser }) => {
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      message.error(error.message || USER_MESSAGES.IMAGE_UPLOAD_FAILED);
+      message.error(getApiErrorMessage(error, USER_MESSAGES.IMAGE_UPLOAD_FAILED));
     } finally {
       setUploading(false);
     }
