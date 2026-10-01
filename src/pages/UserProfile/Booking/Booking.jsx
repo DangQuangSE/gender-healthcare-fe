@@ -13,6 +13,7 @@ import {
 import { refreshPayOSStatus } from "../../../features/payments/paymentStatus";
 import {
   cancelAppointment,
+  createOnlineMeeting,
   getAppointmentsByStatus,
 } from "../../../features/appointments/appointmentApi";
 import authStorage from "../../../shared/storage/authStorage";
@@ -125,6 +126,21 @@ const Booking = () => {
     }
   };
 
+  const handleCreateOnlineMeeting = async (appointmentId) => {
+    try {
+      await createOnlineMeeting(appointmentId);
+      message.success(NOTIFICATION_MESSAGES.BOOKING.ONLINE_ROOM_CREATED);
+      await fetchAppointments();
+    } catch (error) {
+      message.error(
+        getApiErrorMessage(
+          error,
+          NOTIFICATION_MESSAGES.BOOKING.ONLINE_ROOM_CREATE_FAILED,
+        ),
+      );
+    }
+  };
+
   const handlePaymentReturn = useCallback(async () => {
     const returnState = parsePayOSReturn(search);
     if (returnState.kind === "none" || paymentMessageShown.current) return;
@@ -215,6 +231,7 @@ const Booking = () => {
         activeTab={activeTab}
         appointment={appointment}
         onCancel={handleCancelAppointment}
+        onCreateMeeting={handleCreateOnlineMeeting}
         onRate={(value) => {
           setAppointmentToRate(value);
           setRatingModalVisible(true);

@@ -4,6 +4,7 @@ const BookingAppointmentCard = ({
   activeTab,
   appointment,
   onCancel,
+  onCreateMeeting,
   onRate,
   onViewDetail,
   onViewResult,
@@ -45,6 +46,15 @@ const BookingAppointmentCard = ({
             <a href={joinUrl} target="_blank" rel="noopener noreferrer" className="online-consultation-button-profile" title={BOOKING_TEXT.ONLINE_TITLE}>
               {BOOKING_TEXT.ONLINE_CONSULTATION}
             </a>
+          )}
+          {appointment.serviceType === "CONSULTING_ON" && appointment.status === "CONFIRMED" && !joinUrl && (
+            <button
+              className="online-consultation-button-profile"
+              onClick={() => onCreateMeeting(appointment.id)}
+              title={BOOKING_TEXT.ONLINE_TITLE}
+            >
+              {BOOKING_TEXT.CREATE_ONLINE_ROOM}
+            </button>
           )}
           {canViewResult && (
             <button className="result-button-profile" onClick={() => onViewResult(appointment)} title={BOOKING_TEXT.RESULT_TITLE}>

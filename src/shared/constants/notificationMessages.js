@@ -71,6 +71,7 @@ export const NOTIFICATION_MESSAGES = {
     RESULT_NOT_FOUND: "Chưa có kết quả khám cho lịch hẹn này!",
     PAYMENT_VERIFY_FAILED: "Có lỗi khi xác thực thanh toán với máy chủ.",
     ONLINE_ROOM_CREATED: "Phòng tư vấn online đã được tạo!",
+    ONLINE_ROOM_CREATE_FAILED: "Không thể tạo phòng tư vấn online. Vui lòng thử lại.",
     CANCEL_SUCCESS: "Hủy lịch hẹn thành công",
     CANCEL_CONFIRM: "Bạn chắc chắn muốn hủy lịch hẹn này?",
     CANCEL_SERVER_ERROR:
