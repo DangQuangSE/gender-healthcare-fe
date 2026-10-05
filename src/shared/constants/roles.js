@@ -3,6 +3,7 @@ export const USER_ROLES = {
   CONSULTANT: "CONSULTANT",
   STAFF: "STAFF",
   ADMIN: "ADMIN",
+  SUPER_ADMIN: "SUPER_ADMIN",
 };
 
 export default USER_ROLES;

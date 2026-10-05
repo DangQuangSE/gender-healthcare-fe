@@ -88,7 +88,9 @@ const AppRoutes = () => (
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+          <ProtectedRoute
+            allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]}
+          >
             <Admin />
           </ProtectedRoute>
         }

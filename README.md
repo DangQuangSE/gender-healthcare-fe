@@ -46,10 +46,13 @@ Use the shared manual flow checklist in [`plans/gender-healthcare-refactor/docs/
 
 ## Deployment
 
-The production frontend is deployed by Vercel from the `main` branch. The
-repository workflow [`.github/workflows/build.yml`](.github/workflows/build.yml)
-builds the Vite bundle and verifies `dist/index.html`; Vercel performs the
-production deployment after the branch is updated.
+The production frontend is served by the shared VPS Nginx at
+`https://shealth.duckdns.org`. The repository workflow
+[`.github/workflows/build.yml`](.github/workflows/build.yml) builds the Vite
+bundle and verifies `dist/index.html`; publish the resulting `dist` directory
+using the VPS procedure documented in the backend repository's
+[`deploy/frontend-vps.md`](https://github.com/DangQuangSE/gender-healthcare/blob/main/deploy/frontend-vps.md).
 
-The project's required frontend settings must be available to Vercel and the
-build workflow through their respective project configurations.
+The project's required frontend settings must be available as the build
+workflow's Actions variables. The Vercel project is not the production
+entrypoint for this deployment.
