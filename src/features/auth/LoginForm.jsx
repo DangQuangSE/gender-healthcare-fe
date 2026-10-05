@@ -40,7 +40,10 @@ const LoginForm = ({ onClose }) => {
 
       if (session.user.role === USER_ROLES.CUSTOMER) {
         navigate(ROUTES.HOME);
-      } else if (session.user.role === USER_ROLES.ADMIN) {
+      } else if (
+        session.user.role === USER_ROLES.ADMIN ||
+        session.user.role === USER_ROLES.SUPER_ADMIN
+      ) {
         navigate(ROUTES.ADMIN);
       } else if (session.user.role === USER_ROLES.STAFF) {
         navigate(ROUTES.STAFF);

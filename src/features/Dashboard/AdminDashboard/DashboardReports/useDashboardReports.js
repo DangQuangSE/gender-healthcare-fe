@@ -80,8 +80,8 @@ export const useDashboardReports = () => {
     setLoading(true);
     try {
       const results = await fetchDashboardData({
-        startDate: dateRange[0].format("YYYY-MM-DD"),
-        endDate: dateRange[1].format("YYYY-MM-DD"),
+        startDate: dateRange[0].startOf("day").format("YYYY-MM-DDTHH:mm:ss"),
+        endDate: dateRange[1].endOf("day").format("YYYY-MM-DDTHH:mm:ss"),
       });
       const failedStatuses = getRejectedAppointmentStatuses(results);
       if (failedStatuses.length > 0) {
